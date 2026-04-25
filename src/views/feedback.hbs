@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{title}}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { width: 100%; min-height: 100vh; }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #f7f3ef; color: #1a1410;
+            -webkit-font-smoothing: antialiased;
+            display: flex; flex-direction: column;
+        }
+        :root {
+            --primary:       #c8622a;
+            --primary-dark:  #a34d1e;
+            --primary-light: #e8845a;
+            --accent:        #f5a623;
+            --accent-light:  #fde8c0;
+            --bg:            #f7f3ef;
+            --bg2:           #f0e9e1;
+            --surface:       #ffffff;
+            --text:          #1a1410;
+            --text-muted:    #7a6a5a;
+            --border:        #e2d8cc;
+            --radius:        16px;
+            --radius-lg:     24px;
+            --shadow-md:     0 4px 16px rgba(26,20,16,.08);
+        }
+        /* ===== USER MENU ===== */
+.user-menu { position: relative; }
+.user-btn {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface); border: 1.5px solid var(--border);
+    padding: 5px 14px 5px 5px; border-radius: 30px;
+    cursor: pointer; font-family: inherit; transition: all .2s;
+}
+.user-btn:hover { border-color: var(--primary); background: var(--accent-light); }
+.user-avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--primary); color: white;
+    display: grid; place-items: center;
+    font-size: 13px; font-weight: 700;
+}
+.user-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.user-btn svg { color: var(--text-muted); }
+.user-dropdown {
+    position: absolute; top: calc(100% + 8px); right: 0;
+    min-width: 220px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 14px;
+    box-shadow: 0 10px 40px rgba(26,20,16,.12);
+    padding: 6px; opacity: 0; pointer-events: none;
+    transform: translateY(-8px);
+    transition: opacity .2s, transform .2s; z-index: 200;
+}
+.user-dropdown.show { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.user-info { padding: 12px 14px; border-bottom: 1px solid var(--border); margin-bottom: 6px; }
+.user-info-name { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.user-info-role { font-size: 12px; color: var(--text-muted); }
+.badge-admin {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    background: var(--primary); color: white;
+    font-size: 10px; font-weight: 700; letter-spacing: .05em;
+}
+.user-link {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 8px;
+    color: var(--text); text-decoration: none;
+    font-size: 14px; font-weight: 500; transition: background .15s;
+}
+.user-link:hover { background: var(--bg2); }
+.user-link svg { color: var(--text-muted); }
+.user-link-danger { color: #b91c1c; }
+.user-link-danger:hover { background: #fef2f2; }
+.user-link-danger svg { color: #b91c1c; }
+.user-divider { height: 1px; background: var(--border); margin: 6px 0; }
+
+@media (max-width: 640px) { .user-name { display: none; } }
+
+        /* ===== NAVBAR ===== */
+        nav {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(247,243,239,0.92);
+            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 48px; height: 64px;
+            display: flex; align-items: center; justify-content: space-between;
+            animation: slideDown .4s ease both;
+        }
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to   { transform: translateY(0); opacity: 1; }
+        }
+        .nav-logo { display: flex; align-items: center; text-decoration: none; line-height: 0; }
+        .nav-links { display: flex; align-items: center; gap: 36px; list-style: none; }
+        .nav-links a {
+            font-size: 14px; font-weight: 500; color: var(--text-muted);
+            text-decoration: none; transition: color .2s; position: relative;
+        }
+        .nav-links a::after {
+            content: ''; position: absolute; bottom: -3px; left: 0;
+            width: 0; height: 2px; background: var(--primary);
+            border-radius: 2px; transition: width .25s;
+        }
+        .nav-links a:hover { color: var(--text); }
+        .nav-links a:hover::after { width: 100%; }
+        .nav-links a.active { color: var(--text); }
+        .nav-links a.active::after { width: 100%; }
+        .btn-owner {
+            padding: 10px 22px; background: var(--primary); color: #fff;
+            border: none; border-radius: 12px;
+            font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600;
+            text-decoration: none; cursor: pointer;
+            transition: background .2s, transform .15s, box-shadow .2s;
+            box-shadow: 0 4px 14px rgba(200,98,42,.28);
+        }
+        .btn-owner:hover { background: var(--primary-dark); transform: translateY(-1px); }
+
+        /* ===== HERO ===== */
+        .hero {
+            background: linear-gradient(160deg, var(--bg2) 0%, var(--accent-light) 100%);
+            padding: 72px 48px 60px; text-align: center;
+            position: relative; overflow: hidden;
+        }
+        .hero::before {
+            content: ''; position: absolute; top: -80px; right: -80px;
+            width: 300px; height: 300px;
+            background: radial-gradient(circle, rgba(200,98,42,.12), transparent 70%);
+            border-radius: 50%; pointer-events: none;
+        }
+        .hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(36px, 5vw, 56px); font-weight: 700;
+            line-height: 1.1; color: var(--text); margin-bottom: 18px;
+            animation: fadeUp .5s .1s ease both;
+        }
+        .hero h1 em { font-style: italic; color: var(--primary); }
+        .hero-desc {
+            font-size: 16px; color: var(--text-muted); line-height: 1.7;
+            max-width: 520px; margin: 0 auto;
+            animation: fadeUp .5s .2s ease both;
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== FORM ===== */
+        .form-section {
+            flex: 1; padding: 56px 32px 80px;
+            display: flex; justify-content: center;
+        }
+        .form-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 40px;
+            width: 100%; max-width: 620px;
+            box-shadow: var(--shadow-md);
+            animation: fadeUp .5s .25s ease both;
+        }
+        .form-card-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 6px;
+        }
+        .form-card-desc { font-size: 14px; color: var(--text-muted); margin-bottom: 32px; }
+
+        /* Field */
+        .field { margin-bottom: 26px; }
+        .field-label {
+            font-size: 11px; font-weight: 700; letter-spacing: .1em;
+            text-transform: uppercase; color: var(--text-muted);
+            margin-bottom: 10px; display: flex; justify-content: space-between;
+        }
+        .field-label span { font-size: 12px; font-weight: 400; letter-spacing: 0; text-transform: none; }
+
+        /* Tur tanlash */
+        .tip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .tip-card {
+            border: 1.5px solid var(--border); border-radius: var(--radius);
+            padding: 20px 16px; text-align: center; cursor: pointer;
+            transition: all .2s; background: var(--surface);
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
+        }
+        .tip-card:hover { border-color: var(--primary-light); background: rgba(200,98,42,.04); }
+        .tip-card.selected { border-color: var(--primary); background: rgba(200,98,42,.06); }
+        .tip-card input[type="radio"] { display: none; }
+        .tip-icon {
+            width: 44px; height: 44px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--bg2); color: var(--text-muted); transition: all .2s;
+        }
+        .tip-card.selected .tip-icon { background: var(--accent-light); color: var(--primary); }
+        .tip-name { font-size: 15px; font-weight: 600; color: var(--text); }
+        .tip-sub  { font-size: 12px; color: var(--text-muted); }
+
+        /* STAR RATING */
+        .star-rating {
+            display: inline-flex;
+            flex-direction: row-reverse;
+            gap: 6px;
+            justify-content: flex-end;
+        }
+        .star-rating input { display: none; }
+        .star-rating label {
+            font-size: 38px;
+            line-height: 1;
+            color: #d9d9d9;
+            cursor: pointer;
+            transition: color .15s, transform .15s;
+            user-select: none;
+        }
+        .star-rating label:hover { transform: scale(1.1); }
+        .star-rating input:checked ~ label,
+        .star-rating label:hover,
+        .star-rating label:hover ~ label {
+            color: #f5a623;
+        }
+
+        /* Textarea */
+        .form-textarea {
+            width: 100%; min-height: 130px; padding: 14px 16px;
+            border: 1.5px solid var(--border); border-radius: 12px;
+            font-family: 'DM Sans', sans-serif; font-size: 14px;
+            color: var(--text); background: var(--surface);
+            resize: vertical; outline: none;
+            transition: border-color .2s, box-shadow .2s; line-height: 1.6;
+        }
+        .form-textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(200,98,42,.10);
+        }
+        .form-textarea::placeholder { color: var(--text-muted); }
+
+        /* Upload */
+        .upload-zone {
+            border: 1.5px dashed var(--border); border-radius: 12px;
+            padding: 28px 20px; text-align: center; cursor: pointer;
+            transition: all .2s; background: var(--bg); position: relative;
+        }
+        .upload-zone:hover { border-color: var(--primary-light); background: var(--accent-light); }
+        .upload-zone input[type="file"] {
+            position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+        }
+        .upload-icon {
+            width: 44px; height: 44px; border-radius: 50%;
+            background: var(--surface); border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 10px; color: var(--text-muted);
+        }
+        .upload-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+        .upload-sub   { font-size: 12px; color: var(--text-muted); }
+        .upload-preview { display: none; margin-top: 12px; justify-content: center; }
+        .upload-preview img {
+            width: 80px; height: 80px; object-fit: cover;
+            border-radius: 8px; border: 1px solid var(--border);
+        }
+
+        /* Device info box */
+        .device-box {
+            background: var(--bg); border: 1px solid var(--border);
+            border-radius: 12px; padding: 14px 16px;
+            display: flex; align-items: flex-start; gap: 12px;
+        }
+        .device-box svg { color: var(--primary); flex-shrink: 0; margin-top: 2px; }
+        .device-box-text { flex: 1; }
+        .device-box-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+        .device-box-sub   { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+        .device-box-meta  { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
+        .device-box-meta strong { color: var(--primary-dark); }
+
+        /* Submit */
+        .btn-submit {
+            width: 100%; padding: 15px; border-radius: 14px;
+            background: var(--primary); color: white; border: none;
+            font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 600;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+            transition: background .2s, transform .15s, box-shadow .2s;
+            box-shadow: 0 4px 18px rgba(200,98,42,.32); margin-top: 28px;
+        }
+        .btn-submit:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(200,98,42,.4); }
+        .btn-submit:disabled { background: var(--border); color: var(--text-muted); box-shadow: none; cursor: not-allowed; transform: none; }
+
+        .form-note {
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            margin-top: 14px; font-size: 12px; color: var(--text-muted);
+        }
+
+        /* Flash */
+        .flash-success, .flash-error {
+            padding: 14px 18px; border-radius: 12px; margin-bottom: 20px;
+            font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 10px;
+        }
+        .flash-success { background: #fff7ed; color: var(--primary-dark); border: 1px solid var(--accent-light); }
+        .flash-error   { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+
+        /* ===== FOOTER ===== */
+        footer {
+            background: #1a1410; color: rgba(255,255,255,.85);
+            padding: 52px 80px 24px;
+        }
+        .footer-grid {
+            display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr;
+            gap: 48px; margin-bottom: 40px;
+        }
+        .footer-brand .logo-wrap { margin-bottom: 14px; line-height: 0; }
+        .footer-brand p { font-size: 13px; color: rgba(255,255,255,.5); line-height: 1.7; margin-bottom: 20px; }
+        .social-links { display: flex; gap: 10px; }
+        .social-link {
+            width: 34px; height: 34px; border-radius: 10px;
+            background: rgba(255,255,255,.08);
+            display: flex; align-items: center; justify-content: center;
+            color: rgba(255,255,255,.6); text-decoration: none; font-size: 14px;
+            transition: background .2s, color .2s;
+        }
+        .social-link:hover { background: var(--primary); color: white; }
+        .footer-col h4 {
+            font-size: 13px; font-weight: 700; letter-spacing: .06em;
+            text-transform: uppercase; color: rgba(255,255,255,.4); margin-bottom: 16px;
+        }
+        .footer-col ul { list-style: none; }
+        .footer-col ul li { margin-bottom: 10px; }
+        .footer-col ul li a { font-size: 14px; color: rgba(255,255,255,.65); text-decoration: none; transition: color .15s; }
+        .footer-col ul li a:hover { color: white; }
+        .footer-col ul li span { font-size: 14px; color: rgba(255,255,255,.65); }
+        .footer-bottom {
+            padding-top: 24px; border-top: 1px solid rgba(255,255,255,.1);
+            text-align: center;
+        }
+        .footer-bottom p { font-size: 13px; color: rgba(255,255,255,.35); }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 640px) {
+            nav { padding: 0 20px; }
+            .nav-links { display: none; }
+            .hero { padding: 48px 20px 40px; }
+            .form-section { padding: 32px 16px 56px; }
+            .form-card { padding: 24px 18px; }
+            footer { padding: 40px 20px 20px; }
+            .footer-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 900px) {
+            footer { padding: 40px 32px 20px; }
+            .footer-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== NAVBAR ===== -->
+    <nav>
+        <a href="/" class="nav-logo">
+            <svg width="140" height="36" viewBox="0 0 160 40">
+                <rect x="0" y="0" width="160" height="40" rx="20" fill="#c8622a"/>
+                <circle cx="22" cy="20" r="15" fill="white" fill-opacity="0.15"/>
+                <g transform="translate(13, 9)">
+                    <line x1="5"  y1="1" x2="5"  y2="19" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+                    <line x1="3"  y1="1" x2="3"  y2="7"  stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+                    <line x1="5"  y1="1" x2="5"  y2="7"  stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+                    <line x1="7"  y1="1" x2="7"  y2="7"  stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+                    <path d="M3 7 Q5 9.5 7 7" fill="none" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+                    <line x1="12" y1="1" x2="12" y2="19" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+                    <path d="M12 1 Q17 4 17 8 Q17 13 12 13" fill="white"/>
+                </g>
+                <text x="43" y="26" font-family="Georgia, serif" font-size="16" font-weight="700" fill="white" font-style="italic">MossMenu</text>
+            </svg>
+        </a>
+        <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li><a href="/menu">Menu</a></li>
+    <li><a href="/feedback" class="active">Feedback</a></li>
+</ul>
+
+        {{#if user}}
+            <div class="user-menu">
+                <button class="user-btn" id="userBtn">
+                    <span class="user-avatar">{{user.initial}}</span>
+                    <span class="user-name">{{user.name}}</span>
+                    <i data-lucide="chevron-down" width="14" height="14"></i>
+                </button>
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="user-info">
+                        <div class="user-info-name">{{user.name}}</div>
+                        <div class="user-info-role">
+                            {{#if user.isAdmin}}
+                                <span class="badge-admin">ADMIN</span>
+                            {{else}}
+                                Foydalanuvchi
+                            {{/if}}
+                        </div>
+                    </div>
+                    {{#if user.isAdmin}}
+                        <a href="/admin" class="user-link">
+                            <i data-lucide="layout-dashboard" width="14" height="14"></i>
+                            Dashboard
+                        </a>
+                    {{/if}}
+                    <a href="/feedback" class="user-link">
+                        <i data-lucide="message-circle" width="14" height="14"></i>
+                        Fikr qoldirish
+                    </a>
+                    <div class="user-divider"></div>
+                    <a href="/logout" class="user-link user-link-danger">
+                        <i data-lucide="log-out" width="14" height="14"></i>
+                        Chiqish
+                    </a>
+                </div>
+            </div>
+        {{else}}
+            <a href="/login" class="btn-owner">Login</a>
+        {{/if}}
+    </nav>
+
+    <!-- ===== HERO ===== -->
+    <section class="hero">
+        <h1>Sizning fikringiz <em>muhim</em></h1>
+        <p class="hero-desc">
+            Biz har bir mijozning ovozini eshitishni istaymiz. Quyidagi formani
+            to'ldirib, MossMenu xizmatini yaxshilashga yordam bering.
+        </p>
+    </section>
+
+    <!-- ===== FORM ===== -->
+    <section class="form-section">
+        <div class="form-card">
+            <h2 class="form-card-title">Fikr qoldirish</h2>
+            <p class="form-card-desc">Barcha maydonlarni to'ldirish ixtiyoriy, ammo fikringiz biz uchun qadrli.</p>
+
+            {{#if flash.success}}
+                <div class="flash-success">
+                    <i data-lucide="check-circle" width="18" height="18"></i>
+                    {{flash.success}}
+                </div>
+            {{/if}}
+            {{#if flash.error}}
+                <div class="flash-error">
+                    <i data-lucide="alert-circle" width="18" height="18"></i>
+                    {{flash.error}}
+                </div>
+            {{/if}}
+
+            <form action="/feedback" method="POST" enctype="multipart/form-data" id="feedbackForm">
+
+                <!-- type: review / complaint -->
+                <div class="field">
+                    <div class="field-label">Fikr turi</div>
+                    <div class="tip-grid">
+                        <label class="tip-card selected" id="tipReview">
+                            <input type="radio" name="type" value="review" checked />
+                            <div class="tip-icon">
+                                <i data-lucide="smile" width="22" height="22"></i>
+                            </div>
+                            <div class="tip-name">Sharh</div>
+                            <div class="tip-sub">Ijobiy tajriba</div>
+                        </label>
+                        <label class="tip-card" id="tipComplaint">
+                            <input type="radio" name="type" value="complaint" />
+                            <div class="tip-icon">
+                                <i data-lucide="frown" width="22" height="22"></i>
+                            </div>
+                            <div class="tip-name">Shikoyat</div>
+                            <div class="tip-sub">Yordam kerak</div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- rating -->
+                <div class="field">
+                    <div class="field-label">
+                        Bahoyingiz
+                        <span id="ratingValue">5 yulduz</span>
+                    </div>
+                    <div class="star-rating">
+                        <input type="radio" name="rating" id="r5" value="5" checked />
+                        <label for="r5">★</label>
+                        <input type="radio" name="rating" id="r4" value="4" />
+                        <label for="r4">★</label>
+                        <input type="radio" name="rating" id="r3" value="3" />
+                        <label for="r3">★</label>
+                        <input type="radio" name="rating" id="r2" value="2" />
+                        <label for="r2">★</label>
+                        <input type="radio" name="rating" id="r1" value="1" />
+                        <label for="r1">★</label>
+                    </div>
+                </div>
+
+                <!-- message -->
+                <div class="field">
+                    <div class="field-label">
+                        Xabaringiz
+                        <span id="charCount">0/1000</span>
+                    </div>
+                    <textarea
+                        name="message"
+                        class="form-textarea"
+                        id="messageArea"
+                        maxlength="1000"
+                        required
+                        placeholder="Taomlarimiz haqida nima deysiz? Nima ko'proq yoqdi?"
+                    ></textarea>
+                </div>
+
+                <!-- image (optional) -->
+                <div class="field">
+                    <div class="field-label">Rasm (ixtiyoriy)</div>
+                    <div class="upload-zone" id="uploadZone">
+                        <input type="file" name="image" accept="image/jpeg,image/png,image/webp" id="imageInput" />
+                        <div class="upload-icon">
+                            <i data-lucide="camera" width="20" height="20"></i>
+                        </div>
+                        <div class="upload-title">Taom yoki chek rasmini yuklang</div>
+                        <div class="upload-sub">Maksimal 5MB, JPG yoki PNG</div>
+                        <div class="upload-preview" id="uploadPreview"></div>
+                    </div>
+                </div>
+
+                <!-- device_info — yashirin, JS to'ldiradi -->
+                <input type="hidden" name="device_info" id="deviceInfoInput" />
+
+                <!-- device info ko'rsatish -->
+                <div class="field" style="margin-bottom: 28px;">
+                    <div class="device-box">
+                        <i data-lucide="monitor-smartphone" width="18" height="18"></i>
+                        <div class="device-box-text">
+                            <div class="device-box-title">Xavfsizlik va yordam uchun ma'lumot</div>
+                            <div class="device-box-sub">Tezroq yordam berish uchun qurilma ma'lumotlari avtomatik aniqlanadi.</div>
+                            <div class="device-box-meta" id="deviceMeta">Aniqlanmoqda...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <i data-lucide="send" width="18" height="18"></i>
+                    Fikrni yuborish
+                </button>
+
+                <div class="form-note">
+                    <i data-lucide="shield" width="14" height="14"></i>
+                    Xabaringiz to'g'ridan-to'g'ri administrator elektron pochtasiga yuboriladi.
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- ===== FOOTER ===== -->
+    <footer>
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <div class="logo-wrap">
+                    <svg width="140" height="34" viewBox="0 0 155 38">
+                        <rect x="0" y="0" width="155" height="38" rx="19" fill="#c8622a"/>
+                        <circle cx="21" cy="19" r="14" fill="rgba(255,255,255,0.15)"/>
+                        <line x1="16" y1="10" x2="16" y2="28" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="14" y1="10" x2="14" y2="16" stroke="white" stroke-width="1.3" stroke-linecap="round"/>
+                        <line x1="16" y1="10" x2="16" y2="16" stroke="white" stroke-width="1.3" stroke-linecap="round"/>
+                        <line x1="18" y1="10" x2="18" y2="16" stroke="white" stroke-width="1.3" stroke-linecap="round"/>
+                        <path d="M14 16 Q16 18.5 18 16" fill="none" stroke="white" stroke-width="1.3" stroke-linecap="round"/>
+                        <line x1="24" y1="10" x2="24" y2="28" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M24 10 Q30 13 30 18 Q30 23 24 23" fill="white"/>
+                        <text x="40" y="25" font-family="Georgia,serif" font-size="16" font-weight="700" fill="white" font-style="italic">MossMenu</text>
+                    </svg>
+                </div>
+                <p>Bringing the freshness of nature to your table. Experience organic dining with our moss-themed culinary journey.</p>
+                <div class="social-links">
+                    <a href="#" class="social-link">X</a>
+                    <a href="#" class="social-link">f</a>
+                    <a href="#" class="social-link">in</a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/menu">Our Menu</a></li>
+                    <li><a href="/feedback">Leave Feedback</a></li>
+                    <li><a href="/admin/login">Restaurant Login</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Contact</h4>
+                <ul>
+                    <li><span>123 Mossy Lane, Verdant Valley</span></li>
+                    <li><span>hello@mossmenu.com</span></li>
+                    <li><span>(555) 123-4567</span></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Hours</h4>
+                <ul>
+                    <li><span>Mon-Fri: 11am - 10pm</span></li>
+                    <li><span>Sat-Sun: 9am - 11pm</span></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; {{year}} MossMenu. Crafted with love for organic dining.</p>
+        </div>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+
+        // Tip tanlash
+        document.querySelectorAll('.tip-card').forEach(function(card) {
+            card.addEventListener('click', function() {
+                document.querySelectorAll('.tip-card').forEach(function(c) {
+                    c.classList.remove('selected');
+                });
+                card.classList.add('selected');
+            });
+        });
+
+        // Star rating
+        (function() {
+            var stars = document.querySelectorAll('.star-rating input');
+            var ratingValue = document.getElementById('ratingValue');
+            stars.forEach(function(s) {
+                s.addEventListener('change', function() {
+                    ratingValue.textContent = s.value + ' yulduz';
+                });
+            });
+        })();
+
+        // Char counter
+        var msg = document.getElementById('messageArea');
+        var cnt = document.getElementById('charCount');
+        msg.addEventListener('input', function() {
+            cnt.textContent = msg.value.length + '/1000';
+        });
+
+        // Rasm preview
+        document.getElementById('imageInput').addEventListener('change', function() {
+            var preview = document.getElementById('uploadPreview');
+            preview.innerHTML = '';
+            if (this.files && this.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var img = document.createElement('img');
+                    img.src = e.target.result;
+                    preview.appendChild(img);
+                    preview.style.display = 'flex';
+                };
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+
+        // device_info — browser dan avtomatik olish
+        (function() {
+            var ua = navigator.userAgent;
+            var platform = navigator.platform || 'Noma\'lum';
+            var now = new Date().toISOString().split('T')[0];
+
+            var deviceType = /Mobi|Android/i.test(ua) ? 'Mobile' : 'Desktop';
+            var browser = 'Noma\'lum';
+            if (/Firefox/.test(ua))      browser = 'Firefox';
+            else if (/Edg/.test(ua))     browser = 'Edge';
+            else if (/Chrome/.test(ua))  browser = 'Chrome';
+            else if (/Safari/.test(ua))  browser = 'Safari';
+
+            var info = deviceType + ' - ' + browser + ' - ' + platform + ' - ' + now;
+
+            document.getElementById('deviceInfoInput').value = info;
+            document.getElementById('deviceMeta').innerHTML =
+                '<strong>' + deviceType + ' qurilma</strong> - ' + browser + ' - ' + now;
+        })();
+
+        // Submit loading
+        document.getElementById('feedbackForm').addEventListener('submit', function() {
+            var btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.textContent = 'Yuborilmoqda...';
+        });
+    // User dropdown
+    (function () {
+        var btn = document.getElementById("userBtn");
+        var dropdown = document.getElementById("userDropdown");
+        if (!btn || !dropdown) return;
+        btn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            dropdown.classList.toggle("show");
+        });
+        document.addEventListener("click", function (e) {
+            if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
+                dropdown.classList.remove("show");
+            }
+        });
+    })();
+    
+    </script>
+</body>
+</html>

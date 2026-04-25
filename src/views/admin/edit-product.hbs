@@ -1,0 +1,246 @@
+{{!-- src/views/admin/edit-product.hbs --}}
+<div class="page-header">
+    <div>
+        <a href="/admin/products" class="back-link">
+            <i data-lucide="arrow-left" width="16" height="16"></i>
+            Mahsulotlarga qaytish
+        </a>
+        <h1 class="page-title" style="margin-top:8px;">Mahsulotni tahrirlash</h1>
+    </div>
+</div>
+
+{{#if error}}
+    <div class="flash-error">
+        <i data-lucide="alert-circle" width="16" height="16"></i>
+        {{error}}
+    </div>
+{{/if}}
+
+<div class="form-wrap">
+    <form action="/admin/products/{{product._id}}/edit"
+          method="POST"
+          enctype="multipart/form-data"
+          class="edit-form">
+
+        <!-- Nom -->
+        <div class="field">
+            <label class="field-label">Mahsulot nomi <span class="req">*</span></label>
+            <input type="text" name="name" class="form-input"
+                   value="{{product.name}}" placeholder="Masalan: Moxli Tovuq Gril" required />
+        </div>
+
+        <!-- Narx -->
+        <div class="field-row">
+            <div class="field">
+                <label class="field-label">Narxi (so'm) <span class="req">*</span></label>
+                <input type="number" name="price" class="form-input"
+                       value="{{product.price}}" placeholder="45000" min="1" required />
+            </div>
+            <div class="field">
+                <label class="field-label">Reyting (1-5) <span class="req">*</span></label>
+                <input type="number" name="raiting" class="form-input"
+                       value="{{product.raiting}}" min="1" max="5" required />
+            </div>
+        </div>
+
+        <!-- Kategoriya -->
+        <div class="field">
+            <label class="field-label">Kategoriya <span class="req">*</span></label>
+            <select name="category_id" class="form-select" required>
+                <option value="">-- Kategoriya tanlang --</option>
+                {{#each categories}}
+                    <option value="{{this._id}}"
+                        {{#if (eq ../product.category_id (toString this._id))}}selected{{/if}}>
+                        {{this.name}}
+                    </option>
+                {{/each}}
+            </select>
+        </div>
+
+        <!-- Rasm -->
+        <div class="field">
+            <label class="field-label">Mahsulot rasmi</label>
+
+            {{#if product.image}}
+                <div class="current-img-wrap" id="currentImgWrap">
+                    <img src="{{product.image}}" alt="{{product.name}}" class="current-img" />
+                    <div class="current-img-actions">
+                        <span class="current-img-label">
+                            <i data-lucide="image" width="14" height="14"></i>
+                            Hozirgi rasm
+                        </span>
+                        <button type="button" class="btn-remove-img" onclick="removeCurrentImage()">
+                            <i data-lucide="x" width="14" height="14"></i>
+                            O'chirish
+                        </button>
+                    </div>
+                </div>
+                <input type="hidden" name="removeImage" id="removeImageInput" value="0" />
+            {{/if}}
+
+            <div class="upload-zone" style="{{#if product.image}}margin-top:12px;{{/if}}">
+                <input type="file" name="image_file" accept="image/jpeg,image/png,image/webp" id="imageInput" />
+                <div class="upload-icon">
+                    <i data-lucide="upload-cloud" width="22" height="22"></i>
+                </div>
+                <div class="upload-title" id="uploadTitle">
+                    {{#if product.image}}Rasmni almashtirish{{else}}Rasm yuklash{{/if}}
+                </div>
+                <div class="upload-sub">JPG, PNG yoki WEBP — maks. 5MB</div>
+                <div class="upload-preview" id="uploadPreview"></div>
+            </div>
+        </div>
+
+        <!-- Tugmalar -->
+        <div class="form-actions">
+            <a href="/admin/products" class="btn-cancel">Bekor qilish</a>
+            <button type="submit" class="btn-save">
+                <i data-lucide="save" width="16" height="16"></i>
+                Saqlash
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+    .back-link {
+        display: inline-flex; align-items: center; gap: 6px;
+        color: var(--text-muted); text-decoration: none; font-size: 14px;
+        transition: color .2s;
+    }
+    .back-link:hover { color: var(--primary); }
+    .page-title { font-size: 24px; font-weight: 700; color: var(--text); letter-spacing: -.02em; }
+
+    .flash-error {
+        display: flex; align-items: center; gap: 10px;
+        padding: 12px 16px; border-radius: 10px; margin-bottom: 20px;
+        font-size: 14px; font-weight: 500;
+        background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca;
+    }
+
+    .form-wrap {
+        max-width: 620px;
+        background: var(--surface); border: 1px solid var(--border);
+        border-radius: 16px; padding: 32px;
+        box-shadow: 0 2px 8px rgba(26,20,16,.05);
+    }
+
+    .field { margin-bottom: 20px; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    .field-label {
+        display: block; font-size: 13px; font-weight: 600;
+        color: var(--text); margin-bottom: 8px;
+    }
+    .req { color: var(--primary); }
+
+    .form-input, .form-select, .form-textarea {
+        width: 100%; padding: 12px 14px;
+        border: 1.5px solid var(--border); border-radius: 10px;
+        font-family: inherit; font-size: 14px; color: var(--text);
+        background: var(--bg); outline: none;
+        transition: border-color .2s, box-shadow .2s;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(200,98,42,.1);
+        background: white;
+    }
+    .form-textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
+
+    /* Mavjud rasm */
+    .current-img-wrap {
+        border-radius: 12px; overflow: hidden;
+        border: 1.5px solid var(--border); background: var(--bg2);
+    }
+    .current-img { width: 100%; max-height: 200px; object-fit: cover; display: block; }
+    .current-img-actions {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 10px 14px; background: var(--surface);
+        border-top: 1px solid var(--border);
+    }
+    .current-img-label {
+        display: flex; align-items: center; gap: 6px;
+        font-size: 13px; font-weight: 500; color: var(--text-muted);
+    }
+    .btn-remove-img {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 5px 12px; border-radius: 8px;
+        background: #fef2f2; border: 1px solid #fecaca;
+        color: #b91c1c; font-family: inherit; font-size: 12px;
+        font-weight: 600; cursor: pointer; transition: background .2s;
+    }
+    .btn-remove-img:hover { background: #fee2e2; }
+
+    /* Upload zone */
+    .upload-zone {
+        border: 1.5px dashed var(--border); border-radius: 12px;
+        padding: 28px 20px; text-align: center; cursor: pointer;
+        transition: all .2s; background: var(--bg); position: relative;
+    }
+    .upload-zone:hover { border-color: var(--primary-light); background: var(--accent-light); }
+    .upload-zone input[type="file"] {
+        position: absolute; inset: 0; opacity: 0;
+        cursor: pointer; width: 100%; height: 100%;
+    }
+    .upload-icon {
+        width: 44px; height: 44px; border-radius: 50%;
+        background: var(--surface); border: 1px solid var(--border);
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 10px; color: var(--text-muted);
+    }
+    .upload-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+    .upload-sub   { font-size: 12px; color: var(--text-muted); }
+    .upload-preview { display: none; margin-top: 12px; justify-content: center; }
+    .upload-preview img {
+        width: 100%; max-height: 160px; object-fit: cover;
+        border-radius: 8px; border: 1px solid var(--border);
+    }
+
+    .form-actions { display: flex; gap: 12px; margin-top: 28px; }
+    .btn-cancel {
+        padding: 12px 24px; border-radius: 10px;
+        border: 1.5px solid var(--border); background: white;
+        font-family: inherit; font-size: 14px; font-weight: 600;
+        color: var(--text); text-decoration: none; cursor: pointer;
+        transition: background .2s;
+    }
+    .btn-cancel:hover { background: var(--bg); }
+    .btn-save {
+        padding: 12px 28px; border-radius: 10px;
+        background: var(--primary); border: none; color: white;
+        font-family: inherit; font-size: 14px; font-weight: 600;
+        cursor: pointer; display: flex; align-items: center; gap: 8px;
+        transition: background .2s, transform .15s;
+        box-shadow: 0 4px 12px rgba(200,98,42,.28);
+    }
+    .btn-save:hover { background: var(--primary-dark); transform: translateY(-1px); }
+</style>
+
+<script>
+    function removeCurrentImage() {
+        var wrap = document.getElementById('currentImgWrap');
+        var inp  = document.getElementById('removeImageInput');
+        if (wrap) wrap.style.display = 'none';
+        if (inp)  inp.value = '1';
+        var title = document.getElementById('uploadTitle');
+        if (title) title.textContent = 'Rasm yuklash';
+    }
+
+    document.getElementById('imageInput').addEventListener('change', function() {
+        var preview = document.getElementById('uploadPreview');
+        preview.innerHTML = '';
+        if (this.files && this.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var img = document.createElement('img');
+                img.src = e.target.result;
+                preview.appendChild(img);
+                preview.style.display = 'flex';
+            };
+            reader.readAsDataURL(this.files[0]);
+            var title = document.getElementById('uploadTitle');
+            if (title) title.textContent = this.files[0].name;
+        }
+    });
+</script>

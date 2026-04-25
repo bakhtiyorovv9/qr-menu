@@ -1,0 +1,539 @@
+<div class="page-header" style="animation: fadeUp .4s ease both;">
+    <h1 class="page-title">Mahsulot qo'shish</h1>
+    <p class="page-subtitle">Menyuga yangi taom yoki ichimlik qo'shing</p>
+</div>
+
+{{#if error}}
+<div class="alert alert-error" role="alert">
+    <span class="alert-icon">⚠️</span>
+    <span>{{error}}</span>
+</div>
+{{/if}}
+
+{{#if success}}
+<div class="alert alert-success" role="alert">
+    <span class="alert-icon">✓</span>
+    <span>{{success}}</span>
+</div>
+{{/if}}
+
+<div style="display:grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start;">
+
+    <!-- ── Main form ── -->
+    <form action="/admin/products/create" method="POST" enctype="multipart/form-data" id="productForm">
+        <!-- Basic info card -->
+        <div class="card" style="animation: fadeUp .4s .1s ease both; margin-bottom: 20px;">
+            <div class="card-header">
+                <div class="card-icon">🍽️</div>
+                <div>
+                    <div class="card-title">Asosiy ma'lumotlar</div>
+                    <div class="card-desc">Mahsulot nomi, narxi va kategoriyasi</div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="form-grid form-grid-2">
+
+                    <!-- Name -->
+                    <div class="form-group span-2">
+                        <label for="name">
+                            Mahsulot nomi
+                            <span class="label-req">*</span>
+                        </label>
+                        <div class="input-with-icon">
+                            <svg class="input-icon-left" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                            </svg>
+                            <input
+                                type="text"
+                                id="name"
+                                name="name"
+                                value="{{oldName}}"
+                                placeholder="Masalan: Moxli Gril Tovuq, Verdant Salat..."
+                                required
+                                minlength="1"
+                                maxlength="80"
+                                autocomplete="off"
+                                oninput="updateProductPreview('name', this.value)"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Category -->
+                    <div class="form-group">
+                        <label for="category_id">
+                            Kategoriya
+                            <span class="label-req">*</span>
+                        </label>
+                        <select id="category_id" name="category_id" required onchange="updateProductPreview('category', this.options[this.selectedIndex].text)">
+                            <option value="" disabled {{#unless oldCategory}}selected{{/unless}}>— Kategoriya tanlang —</option>
+                            {{#each categories}}
+                            <option value="{{this._id}}" {{#if (eq this._id ../oldCategory)}}selected{{/if}}>
+                                {{this.name}}
+                            </option>
+                            {{/each}}
+                        </select>
+                        {{#unless categories.length}}
+                        <p style="font-size:12px; color:var(--error); margin-top:4px;">
+                            ⚠️ Hech qanday kategoriya yo'q.
+                            <a href="/admin/categories/create" style="color:var(--primary); font-weight:600;">Avval kategoriya yarating →</a>
+                        </p>
+                        {{/unless}}
+                    </div>
+
+                    <!-- Price (tuzatilgan) -->
+                    <div class="form-group">
+                        <label for="price">
+                            Narxi (so'm)
+                            <span class="label-req">*</span>
+                        </label>
+                        <div class="input-with-icon has-suffix">
+                            <svg class="input-icon-left" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <input
+                                type="number"
+                                id="price"
+                                name="price"
+                                value="{{oldPrice}}"
+                                placeholder="35000"
+                                required
+                                min="1"
+                                max="1000000"
+                                oninput="updateProductPreview('price', this.value)"
+                            >
+                            <span class="input-suffix">so'm</span>
+                        </div>
+                        <small class="field-help">1 dan 1 000 000 so'm oralig'ida</small>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Rating card -->
+        <div class="card" style="animation: fadeUp .4s .15s ease both; margin-bottom: 20px;">
+            <div class="card-header">
+                <div class="card-icon" style="background: linear-gradient(135deg, var(--accent), #f7c948);">⭐</div>
+                <div>
+                    <div class="card-title">Reyting</div>
+                    <div class="card-desc">Mahsulot boshlang'ich reytingini belgilang (1–5)</div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label>
+                        Reyting ball
+                        <span class="label-req">*</span>
+                    </label>
+                    <!-- Hidden input name="raiting" (controller shuni kutadi) -->
+                    <input type="hidden" name="raiting" id="raitingInput" value="{{oldRaiting}}">
+                    <div class="stars-input">
+                        <button type="button" class="star-btn" data-val="1" aria-label="1 yulduz">★</button>
+                        <button type="button" class="star-btn" data-val="2" aria-label="2 yulduz">★</button>
+                        <button type="button" class="star-btn" data-val="3" aria-label="3 yulduz">★</button>
+                        <button type="button" class="star-btn" data-val="4" aria-label="4 yulduz">★</button>
+                        <button type="button" class="star-btn" data-val="5" aria-label="5 yulduz">★</button>
+                        <span class="rating-value">4 / 5</span>
+                    </div>
+                    <p style="font-size:12px; color:var(--text-muted); margin-top:6px;">Yangi mahsulot uchun odatda 4–5 yulduz tavsiya etiladi</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Image card -->
+        <div class="card" style="animation: fadeUp .4s .2s ease both; margin-bottom: 20px;">
+            <div class="card-header">
+                <div class="card-icon" style="background: linear-gradient(135deg, #5b6af5, #8b98ff);">🖼️</div>
+                <div>
+                    <div class="card-title">Mahsulot rasmi</div>
+                    <div class="card-desc">Faylni yuklang yoki URL kiriting</div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Tab toggle -->
+                <div style="display:flex; background:var(--bg); border-radius:12px; padding:3px; margin-bottom:18px; width:fit-content; border:1px solid var(--border);">
+                    <button type="button" class="img-tab active" id="tabUpload" onclick="switchImgTab('upload')"
+                        style="padding:8px 20px; border:none; border-radius:10px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; cursor:pointer; transition:all .2s; background:white; color:var(--text); box-shadow:0 2px 8px rgba(0,0,0,.08);">
+                        📁 Fayl yuklash
+                    </button>
+                    <button type="button" class="img-tab" id="tabUrl" onclick="switchImgTab('url')"
+                        style="padding:8px 20px; border:none; border-radius:10px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; cursor:pointer; transition:all .2s; background:transparent; color:var(--text-muted);">
+                        🔗 URL orqali
+                    </button>
+                </div>
+
+                <!-- File upload -->
+                <div id="uploadPanel" class="form-group">
+                    <div class="upload-zone">
+                        <input type="file" name="image_file" accept="image/*" id="imageFile">
+                        <div class="upload-icon">📷</div>
+                        <p class="upload-title"><span class="upload-highlight">Fayl tanlash</span> yoki shu yerga tashlang</p>
+                        <p class="upload-sub">PNG, JPG, WEBP — Maksimal 5 MB</p>
+                    </div>
+                    <div class="img-preview">
+                        <img src="" alt="Preview">
+                        <button type="button" class="img-preview-remove">✕ Olib tashlash</button>
+                    </div>
+                </div>
+
+                <!-- URL input -->
+                <div id="urlPanel" class="form-group" style="display:none;">
+                    <label for="image">Rasm URL manzili <span class="label-req">*</span></label>
+                    <div class="input-with-icon">
+                        <svg class="input-icon-left" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                        </svg>
+                        <input
+                            type="url"
+                            id="image"
+                            name="image"
+                            value="{{oldImage}}"
+                            placeholder="https://example.com/taom-rasmi.jpg"
+                            oninput="previewFromUrl(this.value)"
+                        >
+                    </div>
+                    <div id="urlPreview" style="display:none; margin-top:12px; border-radius:12px; overflow:hidden; border:1px solid var(--border);">
+                        <img id="urlPreviewImg" src="" alt="URL Preview" style="width:100%; max-height:200px; object-fit:cover; display:block;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form actions -->
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:14px; animation: fadeUp .4s .25s ease both;">
+            <a href="/admin/products" class="btn-cancel">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+                Orqaga
+            </a>
+            <div style="display:flex; gap:10px;">
+                <button type="reset" class="btn-cancel" onclick="resetForm()">
+                    ↺ Tozalash
+                </button>
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    Mahsulotni saqlash
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- ── Preview sidebar ── -->
+    <div style="position: sticky; top: 84px; animation: fadeUp .4s .15s ease both;">
+
+        <!-- Product card preview -->
+        <div class="card" style="margin-bottom:16px;">
+            <div class="card-header">
+                <div class="card-icon" style="background: linear-gradient(135deg, #3a9e6e, #5bc48a);">👁️</div>
+                <div>
+                    <div class="card-title">Oldindan ko'rish</div>
+                    <div class="card-desc">Saytda shunday ko'rinadi</div>
+                </div>
+            </div>
+            <div class="card-body" style="padding: 16px;">
+                <div style="border:1px solid var(--border); border-radius:16px; overflow:hidden; background:var(--surface);">
+                    <!-- Image area -->
+                    <div id="previewImgWrap" style="aspect-ratio:16/10; background:linear-gradient(135deg,#e8ddd4,#d4c4b4); display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;">
+                        <div id="previewImgPlaceholder" style="text-align:center;">
+                            <div style="font-size:32px; margin-bottom:6px;">🍽️</div>
+                            <p style="font-size:11px; color:var(--text-muted);">Rasm yuklanmagan</p>
+                        </div>
+                        <img id="previewImg" src="" alt="" style="display:none; width:100%; height:100%; object-fit:cover; position:absolute; inset:0;">
+                        <div id="previewBadge" style="position:absolute; top:10px; left:10px; display:none; padding:4px 10px; background:var(--primary); color:white; border-radius:20px; font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;">Yangi</div>
+                    </div>
+                    <!-- Info -->
+                    <div style="padding:16px;">
+                        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:8px;">
+                            <h4 id="previewTitle" style="font-family:'Playfair Display',serif; font-size:15px; font-weight:700; color:var(--text-muted); line-height:1.3;">Mahsulot nomi...</h4>
+                            <span id="previewPrice" style="font-size:14px; font-weight:700; color:var(--text-muted); white-space:nowrap;">— so'm</span>
+                        </div>
+                        <div id="previewCategory" style="font-size:11px; color:var(--text-muted); margin-bottom:10px; background:var(--bg); padding:4px 10px; border-radius:20px; width:fit-content;">Kategoriya tanlanmagan</div>
+                        <div id="previewStars" style="color: var(--border); font-size:14px; letter-spacing:2px;">★★★★★</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Checklist -->
+        <div class="card">
+            <div class="card-body" style="padding:18px;">
+                <p style="font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); margin-bottom:12px;">Tekshirish ro'yxati</p>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <div class="check-item" id="checkName" style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-muted);">
+                        <span class="check-ic" style="width:18px; height:18px; border-radius:50%; border:2px solid var(--border); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:10px; font-weight:700;">✕</span>
+                        Mahsulot nomi
+                    </div>
+                    <div class="check-item" id="checkCat" style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-muted);">
+                        <span class="check-ic" style="width:18px; height:18px; border-radius:50%; border:2px solid var(--border); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:10px; font-weight:700;">✕</span>
+                        Kategoriya tanlandi
+                    </div>
+                    <div class="check-item" id="checkPrice" style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-muted);">
+                        <span class="check-ic" style="width:18px; height:18px; border-radius:50%; border:2px solid var(--border); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:10px; font-weight:700;">✕</span>
+                        Narx kiritildi (0–1M)
+                    </div>
+                    <div class="check-item" id="checkRating" style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-muted);">
+                        <span class="check-ic" style="width:18px; height:18px; border-radius:50%; border:2px solid var(--border); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:10px; font-weight:700;">✕</span>
+                        Reyting belgilandi
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ── Reyting yulduzlari ──
+    function initRating() {
+        const starBtns = document.querySelectorAll('.star-btn');
+        const ratingHidden = document.getElementById('raitingInput');
+        const previewStars = document.getElementById('previewStars');
+        const ratingValueSpan = document.querySelector('.rating-value');
+
+        function setRating(value) {
+            const val = parseInt(value);
+            if (isNaN(val) || val < 1 || val > 5) return;
+            ratingHidden.value = val;
+
+            // Yulduz vizual
+            starBtns.forEach((btn, idx) => {
+                const starVal = parseInt(btn.dataset.val);
+                if (starVal <= val) {
+                    btn.style.color = 'var(--accent)';
+                    btn.style.opacity = '1';
+                } else {
+                    btn.style.color = 'var(--border)';
+                    btn.style.opacity = '0.6';
+                }
+            });
+            // Preview
+            previewStars.textContent = '★'.repeat(val) + '☆'.repeat(5 - val);
+            previewStars.style.color = val > 0 ? 'var(--accent)' : 'var(--border)';
+            if (ratingValueSpan) ratingValueSpan.textContent = val + ' / 5';
+
+            // Checklist
+            checkStates.rating = true;
+            updateCheckItem('checkRating', true);
+        }
+
+        starBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                setRating(btn.dataset.val);
+            });
+        });
+
+        // boshlang‘ich qiymat: agar oldRaiting bo‘lsa, shuni ishlat; aks holda 4
+        let initVal = ratingHidden.value;
+        if (!initVal || initVal < 1 || initVal > 5) initVal = 4;
+        setRating(initVal);
+    }
+
+    // ── Tab switch ──
+    function switchImgTab(tab) {
+        const uploadPanel = document.getElementById('uploadPanel');
+        const urlPanel = document.getElementById('urlPanel');
+        const tabUpload = document.getElementById('tabUpload');
+        const tabUrl = document.getElementById('tabUrl');
+
+        if (tab === 'upload') {
+            uploadPanel.style.display = 'block';
+            urlPanel.style.display = 'none';
+            tabUpload.style.background = 'white';
+            tabUpload.style.color = 'var(--text)';
+            tabUpload.style.boxShadow = '0 2px 8px rgba(0,0,0,.08)';
+            tabUrl.style.background = 'transparent';
+            tabUrl.style.color = 'var(--text-muted)';
+            tabUrl.style.boxShadow = 'none';
+        } else {
+            uploadPanel.style.display = 'none';
+            urlPanel.style.display = 'block';
+            tabUrl.style.background = 'white';
+            tabUrl.style.color = 'var(--text)';
+            tabUrl.style.boxShadow = '0 2px 8px rgba(0,0,0,.08)';
+            tabUpload.style.background = 'transparent';
+            tabUpload.style.color = 'var(--text-muted)';
+            tabUpload.style.boxShadow = 'none';
+        }
+    }
+
+    // ── URL preview ──
+    function previewFromUrl(url) {
+        const panel = document.getElementById('urlPreview');
+        const img = document.getElementById('urlPreviewImg');
+        const previewImg = document.getElementById('previewImg');
+        const previewPlaceholder = document.getElementById('previewImgPlaceholder');
+
+        if (url && url.startsWith('http')) {
+            img.src = url;
+            panel.style.display = 'block';
+            img.onerror = () => { panel.style.display = 'none'; };
+            img.onload = () => {
+                previewImg.src = url;
+                previewImg.style.display = 'block';
+                if (previewPlaceholder) previewPlaceholder.style.display = 'none';
+            };
+        } else {
+            panel.style.display = 'none';
+        }
+    }
+
+    // ── File upload preview ──
+    document.getElementById('imageFile')?.addEventListener('change', function() {
+        if (!this.files[0]) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            document.getElementById('previewImg').src = e.target.result;
+            document.getElementById('previewImg').style.display = 'block';
+            document.getElementById('previewImgPlaceholder').style.display = 'none';
+            document.getElementById('previewBadge').style.display = 'block';
+        };
+        reader.readAsDataURL(this.files[0]);
+    });
+
+    // ── Product preview updater ──
+    const checkStates = { name: false, category: false, price: false, rating: false };
+
+    function updateProductPreview(field, val) {
+        if (field === 'name') {
+            const el = document.getElementById('previewTitle');
+            const v = val.trim();
+            el.textContent = v || 'Mahsulot nomi...';
+            el.style.color = v ? 'var(--text)' : 'var(--text-muted)';
+            checkStates.name = v.length > 0;
+            updateCheckItem('checkName', checkStates.name);
+        }
+        if (field === 'category') {
+            const el = document.getElementById('previewCategory');
+            const text = (val === '— Kategoriya tanlang —' || !val) ? 'Kategoriya tanlanmagan' : val;
+            el.textContent = text;
+            checkStates.category = val && val !== '— Kategoriya tanlang —';
+            updateCheckItem('checkCat', checkStates.category);
+        }
+        if (field === 'price') {
+            const elPrice = document.getElementById('previewPrice');
+            const n = parseInt(val);
+            // validatsiya: 0 dan 1_000_000 gacha va son
+            const isValid = !isNaN(n) && n >= 0 && n <= 1_000_000;
+            if (isValid) {
+                elPrice.textContent = n.toLocaleString('uz-UZ') + ' so\'m';
+                elPrice.style.color = 'var(--primary)';
+            } else {
+                if (val === '') {
+                    elPrice.textContent = '— so\'m';
+                    elPrice.style.color = 'var(--text-muted)';
+                } else {
+                    elPrice.textContent = 'Narx 0–1M oralig\'ida';
+                    elPrice.style.color = 'var(--error)';
+                }
+            }
+            checkStates.price = isValid;
+            updateCheckItem('checkPrice', isValid);
+        }
+    }
+
+    function updateCheckItem(id, done) {
+        const item = document.getElementById(id);
+        if (!item) return;
+        const ic = item.querySelector('.check-ic');
+        if (done) {
+            ic.textContent = '✓';
+            ic.style.background = 'var(--success)';
+            ic.style.borderColor = 'var(--success)';
+            ic.style.color = 'white';
+            item.style.color = 'var(--text)';
+        } else {
+            ic.textContent = '✕';
+            ic.style.background = 'transparent';
+            ic.style.borderColor = 'var(--border)';
+            ic.style.color = 'var(--text-muted)';
+            item.style.color = 'var(--text-muted)';
+        }
+    }
+
+    // Submit oldidan validatsiya
+    document.getElementById('productForm').addEventListener('submit', function(e) {
+        const ratingVal = document.getElementById('raitingInput').value;
+        if (!ratingVal || ratingVal < 1 || ratingVal > 5) {
+            e.preventDefault();
+            alert('Iltimos, reyting belgilang (1–5 yulduz)!');
+            return;
+        }
+        const priceVal = parseInt(document.getElementById('price').value);
+        if (isNaN(priceVal) || priceVal < 0 || priceVal > 1_000_000) {
+            e.preventDefault();
+            alert('Narx 0 dan 1,000,000 so‘mgacha bo‘lishi kerak!');
+            return;
+        }
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerHTML = `
+            <svg width="16" height="16" style="animation:spin 1s linear infinite" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            </svg>
+            Saqlanmoqda...
+        `;
+    });
+
+    function resetForm() {
+        document.getElementById('previewTitle').textContent = 'Mahsulot nomi...';
+        document.getElementById('previewTitle').style.color = 'var(--text-muted)';
+        document.getElementById('previewPrice').textContent = '— so\'m';
+        document.getElementById('previewPrice').style.color = 'var(--text-muted)';
+        document.getElementById('previewCategory').textContent = 'Kategoriya tanlanmagan';
+        document.getElementById('previewStars').textContent = '★★★★★';
+        document.getElementById('previewStars').style.color = 'var(--border)';
+        document.getElementById('previewImg').style.display = 'none';
+        document.getElementById('previewImgPlaceholder').style.display = 'block';
+        document.getElementById('previewBadge').style.display = 'none';
+        // rating default 4
+        const ratingHidden = document.getElementById('raitingInput');
+        if (ratingHidden) {
+            ratingHidden.value = 4;
+            const starBtns = document.querySelectorAll('.star-btn');
+            starBtns.forEach((btn, idx) => {
+                const starVal = parseInt(btn.dataset.val);
+                if (starVal <= 4) {
+                    btn.style.color = 'var(--accent)';
+                    btn.style.opacity = '1';
+                } else {
+                    btn.style.color = 'var(--border)';
+                    btn.style.opacity = '0.6';
+                }
+            });
+            document.getElementById('previewStars').textContent = '★★★★☆';
+            document.getElementById('previewStars').style.color = 'var(--accent)';
+            const ratingSpan = document.querySelector('.rating-value');
+            if (ratingSpan) ratingSpan.textContent = '4 / 5';
+            checkStates.rating = true;
+            updateCheckItem('checkRating', true);
+        }
+        // boshqa checklarni tozalash
+        checkStates.name = false;
+        checkStates.category = false;
+        checkStates.price = false;
+        updateCheckItem('checkName', false);
+        updateCheckItem('checkCat', false);
+        updateCheckItem('checkPrice', false);
+    }
+
+    // Sahifa yuklanganda ishga tushirish
+    document.addEventListener('DOMContentLoaded', () => {
+        initRating();
+        // Mavjud qiymatlarni previewga olish
+        const nameVal = document.getElementById('name')?.value || '';
+        const catSelect = document.getElementById('category_id');
+        const catText = catSelect?.options[catSelect.selectedIndex]?.text || '';
+        const priceVal = document.getElementById('price')?.value || '';
+        updateProductPreview('name', nameVal);
+        updateProductPreview('category', catText);
+        updateProductPreview('price', priceVal);
+    });
+</script>
+
+<style>
+@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+.field-help { font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block; }
+</style>

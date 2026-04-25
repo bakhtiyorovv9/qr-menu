@@ -1,0 +1,428 @@
+<div class="page-header" style="animation: fadeUp .4s ease both;">
+    <h1 class="page-title">Kategoriya qo'shish</h1>
+    <p class="page-subtitle">Yangi menyu kategoriyasini yarating va saqlang</p>
+</div>
+
+{{#if error}}
+<div class="alert alert-error" role="alert">
+    <span class="alert-icon">⚠️</span>
+    <span>{{error}}</span>
+</div>
+{{/if}}
+
+{{#if success}}
+<div class="alert alert-success" role="alert">
+    <span class="alert-icon">✓</span>
+    <span>{{success}}</span>
+</div>
+{{/if}}
+
+<div style="display:grid; grid-template-columns: 1fr 360px; gap: 24px; align-items: start;">
+
+    <!-- ── Main form card (image qo'shildi) ── -->
+    <div class="card" style="animation: fadeUp .4s .1s ease both;">
+        <div class="card-header">
+            <div class="card-icon">🗂️</div>
+            <div>
+                <div class="card-title">Kategoriya ma'lumotlari</div>
+                <div class="card-desc">Kategoriya nomi va rasmini kiriting</div>
+            </div>
+        </div>
+
+        <!-- FORM enctype qo'shildi -->
+        <form action="/admin/categories/create" method="POST" enctype="multipart/form-data" id="categoryForm">
+            <div class="card-body">
+                <div class="form-grid">
+
+                    <!-- Name -->
+                    <div class="form-group">
+                        <label for="name">
+                            Kategoriya nomi
+                            <span class="label-req">*</span>
+                            <span class="label-hint">Min. 1 ta belgi</span>
+                        </label>
+                        <div class="input-with-icon">
+                            <svg class="input-icon-left" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z"/>
+                            </svg>
+                            <input
+                                type="text"
+                                id="name"
+                                name="name"
+                                value="{{oldName}}"
+                                placeholder="Masalan: Asosiy taomlar, Salatlar, Ichimliklar..."
+                                required
+                                minlength="1"
+                                maxlength="60"
+                                autocomplete="off"
+                                oninput="updatePreviewName(this.value)"
+                            >
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-top:4px;">
+                            <span style="font-size:12px; color:var(--text-muted);">Restoran menyusida ko'rinadigan nom</span>
+                            <span style="font-size:12px; color:var(--text-muted);" id="charCount">0 / 60</span>
+                        </div>
+                    </div>
+
+                    <!-- ── Yangi: Rasm yuklash (File + URL) ── -->
+                    <div class="form-group">
+                        <label>Kategoriya rasmi</label>
+                        <div style="display:flex; gap:8px; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+                            <button type="button" class="img-tab-btn active" data-tab="fileTab">📁 Fayl yuklash</button>
+                            <button type="button" class="img-tab-btn" data-tab="urlTab">🔗 URL orqali</button>
+                        </div>
+
+                        <!-- File yuklash -->
+                        <div id="fileTab" class="img-tab-pane active">
+                            <div class="upload-zone" style="border:2px dashed var(--border); border-radius:var(--radius); padding:20px; text-align:center; cursor:pointer; transition:all .2s;">
+                                <input type="file" name="image" id="imageFile" accept="image/jpeg,image/png,image/webp" style="display:none;">
+                                <div class="upload-icon" style="font-size:32px; margin-bottom:8px;">📷</div>
+                                <p class="upload-title"><span class="upload-highlight" style="color:var(--primary); font-weight:600;">Fayl tanlash</span> yoki shu yerga tashlang</p>
+                                <p class="upload-sub" style="font-size:12px; color:var(--text-muted);">PNG, JPG, WEBP — Maksimal 5 MB</p>
+                            </div>
+                            <div id="filePreview" style="display:none; margin-top:12px; border-radius:12px; overflow:hidden; border:1px solid var(--border);">
+                                <img id="previewFileImg" src="" alt="Preview" style="width:100%; max-height:180px; object-fit:cover;">
+                                <button type="button" id="removeFileBtn" style="width:100%; background:var(--error); color:white; border:none; padding:6px; cursor:pointer;">✕ Olib tashlash</button>
+                            </div>
+                        </div>
+
+                        <!-- URL yuklash -->
+                        <div id="urlTab" class="img-tab-pane" style="display:none;">
+                            <div class="input-with-icon">
+                                <svg class="input-icon-left" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                                </svg>
+                                <input type="url" id="imageUrl" name="image_url" placeholder="https://example.com/rasm.jpg" oninput="previewFromUrl(this.value)">
+                            </div>
+                            <div id="urlPreview" style="display:none; margin-top:12px; border-radius:12px; overflow:hidden; border:1px solid var(--border);">
+                                <img id="previewUrlImg" src="" alt="URL Preview" style="width:100%; max-height:180px; object-fit:cover;">
+                                <button type="button" id="removeUrlBtn" style="width:100%; background:var(--error); color:white; border:none; padding:6px; cursor:pointer;">✕ Olib tashlash</button>
+                            </div>
+                        </div>
+                        <p style="font-size:12px; color:var(--text-muted); margin-top:8px;">Kategoriya kartasida ko'rinadi. Ixtiyoriy.</p>
+                    </div>
+
+                    <!-- Info box (maslahat) -->
+                    <div style="background: var(--accent-light); border: 1px solid rgba(245,166,35,.3); border-radius: 12px; padding: 16px 18px; display:flex; gap:12px; align-items:flex-start;">
+                        <span style="font-size:18px; flex-shrink:0;">💡</span>
+                        <div>
+                            <p style="font-size:13px; font-weight:600; color: var(--primary-dark); margin-bottom:4px;">Maslahat</p>
+                            <p style="font-size:13px; color: var(--primary-dark); line-height:1.6; opacity:.85;">
+                                Kategoriya nomi qisqa va tushunarli bo'lishi kerak. Masalan: "Asosiy taomlar", "Salatlar", "Ichimliklar", "Desertlar".
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="card-footer">
+                <a href="/admin/categories" class="btn-cancel">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    Orqaga
+                </a>
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    Kategoriyani saqlash
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- ── Preview card (rasm bilan) ── -->
+    <div style="animation: fadeUp .4s .2s ease both;">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon" style="background: linear-gradient(135deg, #3a9e6e, #5bc48a);">👁️</div>
+                <div>
+                    <div class="card-title">Ko'rinishi</div>
+                    <div class="card-desc">Saytda shunday ko'rinadi</div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Category card preview (rasm qo'llab-quvvatlanadi) -->
+                <div style="border: 1.5px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--bg);">
+                    <div id="previewImageArea" style="aspect-ratio:4/3; background: linear-gradient(135deg, #e8ddd4, #d4c4b4); display:flex; align-items:center; justify-content:center; position:relative;">
+                        <div id="previewPlaceholder" style="text-align:center;">
+                            <div style="font-size:40px; margin-bottom:8px;">🗂️</div>
+                            <p style="font-size:12px; color:var(--text-muted);">Rasm qo'shilmagan</p>
+                        </div>
+                        <img id="previewCategoryImage" src="" style="display:none; width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0;">
+                    </div>
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 16px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <div style="width:26px; height:26px; border-radius:8px; background:var(--accent-light); display:flex; align-items:center; justify-content:center; font-size:13px;">🍴</div>
+                            <span id="previewName" style="font-size:14px; font-weight:600; color:var(--text-muted);">Nom kiriting...</span>
+                        </div>
+                        <div style="width:28px; height:28px; border-radius:50%; border:1.5px solid var(--border); display:flex; align-items:center; justify-content:center; color:var(--text-muted);">›</div>
+                    </div>
+                </div>
+
+                <!-- Meta info -->
+                <div style="margin-top:16px; display:flex; flex-direction:column; gap:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:var(--bg); border-radius:10px; border:1px solid var(--border);">
+                        <span style="font-size:13px; color:var(--text-muted);">Admin</span>
+                        <span style="font-size:13px; font-weight:600;">{{adminName}}</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:var(--bg); border-radius:10px; border:1px solid var(--border);">
+                        <span style="font-size:13px; color:var(--text-muted);">Sana</span>
+                        <span style="font-size:13px; font-weight:600;">{{today}}</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:var(--bg); border-radius:10px; border:1px solid var(--border);">
+                        <span style="font-size:13px; color:var(--text-muted);">Mahsulotlar</span>
+                        <span style="font-size:13px; font-weight:600;">0 ta</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick links -->
+        <div style="margin-top:16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px;">
+            <p style="font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); margin-bottom:12px;">Tezkor harakatlar</p>
+            <a href="/admin/categories" style="display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; transition:background .15s;" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='none'">
+                <span>📋</span> Barcha kategoriyalar
+            </a>
+            <a href="/admin/products/create" style="display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; transition:background .15s;" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='none'">
+                <span>➕</span> Mahsulot qo'shish
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ======================= DOM yuklangandan keyin ishga tushirish =======================
+    document.addEventListener('DOMContentLoaded', function() {
+        // -------------------- NOM PREVIEW --------------------
+        const nameInput = document.getElementById('name');
+        const previewNameSpan = document.getElementById('previewName');
+        const charCountSpan = document.getElementById('charCount');
+
+        function updateNamePreview() {
+            if (previewNameSpan) {
+                let val = nameInput ? nameInput.value : '';
+                previewNameSpan.textContent = val.trim() || 'Nom kiriting...';
+                previewNameSpan.style.color = val.trim() ? 'var(--text)' : 'var(--text-muted)';
+            }
+            if (charCountSpan && nameInput) {
+                charCountSpan.textContent = nameInput.value.length + ' / 60';
+                charCountSpan.style.color = nameInput.value.length > 50 ? 'var(--primary)' : 'var(--text-muted)';
+            }
+        }
+        if (nameInput) {
+            nameInput.addEventListener('input', updateNamePreview);
+            updateNamePreview();
+        }
+
+        // -------------------- TAB SWITCHING (FILE / URL) --------------------
+        const tabBtns = document.querySelectorAll('.img-tab-btn');
+        const fileTab = document.getElementById('fileTab');
+        const urlTab = document.getElementById('urlTab');
+
+        if (tabBtns.length && fileTab && urlTab) {
+            function setActiveTab(tabId) {
+                tabBtns.forEach(btn => {
+                    btn.classList.remove('active');
+                    btn.style.background = 'transparent';
+                    btn.style.color = 'var(--text-muted)';
+                    btn.style.borderBottom = 'none';
+                });
+                const activeBtn = document.querySelector(`.img-tab-btn[data-tab="${tabId}"]`);
+                if (activeBtn) {
+                    activeBtn.classList.add('active');
+                    activeBtn.style.background = 'white';
+                    activeBtn.style.color = 'var(--text)';
+                    activeBtn.style.borderBottom = '2px solid var(--primary)';
+                }
+                fileTab.style.display = (tabId === 'fileTab') ? 'block' : 'none';
+                urlTab.style.display = (tabId === 'urlTab') ? 'block' : 'none';
+            }
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => setActiveTab(btn.dataset.tab));
+            });
+            // boshlang‘ich holat (active bo‘lganini top)
+            const activeTab = document.querySelector('.img-tab-btn.active');
+            if (activeTab) setActiveTab(activeTab.dataset.tab);
+            else setActiveTab('fileTab');
+        }
+
+        // -------------------- FILE PREVIEW (MUHIM QISM) --------------------
+        const fileInput = document.getElementById('imageFile');
+        const mainPreviewImg = document.getElementById('previewCategoryImage');
+        const mainPlaceholder = document.getElementById('previewPlaceholder');
+        const filePreviewDiv = document.getElementById('filePreview');
+        const previewFileImg = document.getElementById('previewFileImg');
+        const removeFileBtn = document.getElementById('removeFileBtn');
+
+        // Fayl tanlanganda ishlovchi funksiya
+        function handleFile(file) {
+            if (!file) return;
+            if (!file.type.startsWith('image/')) {
+                alert('Faqat rasm fayli tanlang!');
+                fileInput.value = '';
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Fayl hajmi 5 MB dan oshmasligi kerak!');
+                fileInput.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // Asosiy preview (kategoriya kartasi)
+                if (mainPreviewImg) {
+                    mainPreviewImg.src = e.target.result;
+                    mainPreviewImg.style.display = 'block';
+                    if (mainPlaceholder) mainPlaceholder.style.display = 'none';
+                    console.log('Asosiy preview yangilandi'); // debug
+                }
+                // Kichik preview paneli (agar mavjud bo‘lsa)
+                if (filePreviewDiv && previewFileImg) {
+                    previewFileImg.src = e.target.result;
+                    filePreviewDiv.style.display = 'block';
+                }
+                // URL inputni tozalash
+                const urlInput = document.getElementById('imageUrl');
+                if (urlInput) urlInput.value = '';
+                const urlPreviewDiv = document.getElementById('urlPreview');
+                if (urlPreviewDiv) urlPreviewDiv.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Event listenerlar
+        if (fileInput) {
+            fileInput.addEventListener('change', function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    handleFile(e.target.files[0]);
+                }
+            });
+        }
+
+        // Drag & drop zone (agar mavjud bo‘lsa)
+        const uploadZone = document.querySelector('#fileTab .upload-zone');
+        if (uploadZone) {
+            uploadZone.addEventListener('click', () => fileInput.click());
+            uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.style.borderColor = 'var(--primary)'; });
+            uploadZone.addEventListener('dragleave', () => uploadZone.style.borderColor = 'var(--border)');
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadZone.style.borderColor = 'var(--border)';
+                const file = e.dataTransfer.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    fileInput.files = e.dataTransfer.files;
+                    handleFile(file);
+                } else alert('Faqat rasm fayli yuklang!');
+            });
+        }
+
+        // "Olib tashlash" tugmasi (file)
+        if (removeFileBtn) {
+            removeFileBtn.addEventListener('click', () => {
+                if (fileInput) fileInput.value = '';
+                if (filePreviewDiv) filePreviewDiv.style.display = 'none';
+                if (mainPreviewImg) {
+                    mainPreviewImg.style.display = 'none';
+                    if (mainPlaceholder) mainPlaceholder.style.display = 'flex';
+                }
+                // Agar URL tab ochiq bo‘lsa, uning inputini tozalash shart emas
+            });
+        }
+
+        // -------------------- URL PREVIEW (ixtiyoriy) --------------------
+        const imageUrlInput = document.getElementById('imageUrl');
+        const urlPreviewDiv = document.getElementById('urlPreview');
+        const previewUrlImg = document.getElementById('previewUrlImg');
+        const removeUrlBtn = document.getElementById('removeUrlBtn');
+
+        window.previewFromUrl = function(url) {
+            if (url && url.startsWith('http')) {
+                if (previewUrlImg) {
+                    previewUrlImg.src = url;
+                    if (urlPreviewDiv) urlPreviewDiv.style.display = 'block';
+                    previewUrlImg.onerror = () => {
+                        if (urlPreviewDiv) urlPreviewDiv.style.display = 'none';
+                        alert('Rasmni yuklab bo‘lmadi. URL manzilni tekshiring.');
+                    };
+                    previewUrlImg.onload = () => {
+                        if (mainPreviewImg) {
+                            mainPreviewImg.src = url;
+                            mainPreviewImg.style.display = 'block';
+                            if (mainPlaceholder) mainPlaceholder.style.display = 'none';
+                        }
+                        // Fayl inputni tozalash
+                        if (fileInput) fileInput.value = '';
+                        if (filePreviewDiv) filePreviewDiv.style.display = 'none';
+                    };
+                }
+            } else {
+                if (urlPreviewDiv) urlPreviewDiv.style.display = 'none';
+                // Agar fayl tanlanmagan bo‘lsa, asosiy previewni yashirish
+                if (!fileInput || !fileInput.files.length) {
+                    if (mainPreviewImg) mainPreviewImg.style.display = 'none';
+                    if (mainPlaceholder) mainPlaceholder.style.display = 'flex';
+                }
+            }
+        };
+
+        if (imageUrlInput) {
+            imageUrlInput.addEventListener('input', (e) => previewFromUrl(e.target.value));
+        }
+        if (removeUrlBtn) {
+            removeUrlBtn.addEventListener('click', () => {
+                if (imageUrlInput) imageUrlInput.value = '';
+                if (urlPreviewDiv) urlPreviewDiv.style.display = 'none';
+                if (!fileInput || !fileInput.files.length) {
+                    if (mainPreviewImg) mainPreviewImg.style.display = 'none';
+                    if (mainPlaceholder) mainPlaceholder.style.display = 'flex';
+                }
+            });
+        }
+
+        // -------------------- FORM SUBMIT LOADING (ixtiyoriy) --------------------
+        const categoryForm = document.getElementById('categoryForm');
+        const submitBtn = document.getElementById('submitBtn');
+        if (categoryForm && submitBtn) {
+            categoryForm.addEventListener('submit', function() {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `
+                    <svg width="16" height="16" style="animation:spin 1s linear infinite" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                    </svg>
+                    Saqlanmoqda...
+                `;
+            });
+        }
+    });
+</script>
+
+<style>
+@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+.img-tab-btn {
+    background: transparent;
+    border: none;
+    padding: 6px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 20px;
+    transition: all 0.2s;
+}
+.img-tab-btn.active {
+    background: white;
+    color: var(--text);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    border-bottom: 2px solid var(--primary);
+}
+.upload-zone {
+    transition: border-color 0.2s, background 0.2s;
+}
+.upload-zone:hover {
+    border-color: var(--primary);
+    background: var(--accent-light);
+}
+</style>
