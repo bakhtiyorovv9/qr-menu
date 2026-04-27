@@ -21,6 +21,8 @@ import { attachUser } from "./middleware/protected.middleware.js";
 
 config();
 
+fs.mkdirSync(path.join(process.cwd(), "uploads"), { recursive: true });
+
 const app = express();
 
 app.engine(
