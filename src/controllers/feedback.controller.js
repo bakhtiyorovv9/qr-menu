@@ -1,7 +1,7 @@
 import { Feedback } from "../models/feedback.model.js";
 import { User } from "../models/user.model.js";
 import { sendEMAil } from "../helpers/mail.helper.js";
-import { uploadToImageKit } from "../helpers/imagekit.helper.js"; // ✅ QO'SHILDI
+import { uploadToImageKit } from "../helpers/cloudinary.helper.js"; // ✅ QO'SHILDI
 
 class FeedbackController {
     getPage = async (req, res) => {

@@ -3,7 +3,7 @@ import { NotFoundException } from "../exceptions/not-found.exception.js";
 import {
     uploadToImageKit,
     deleteFromImageKit,
-} from "../helpers/imagekit.helper.js";
+} from "../helpers/cloudinary.helper.js";
 
 class ProductController {
     #_productModel;
