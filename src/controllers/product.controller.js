@@ -119,7 +119,7 @@ class ProductController {
             }
 
             if (req.file) {
-                await deleteFromCloudinary(existing.image);
+                if (existing.image) await deleteFromCloudinary(existing.image);
                 updates.image = await uploadToCloudinary(
                     req.file.buffer,
                     req.file.originalname,
@@ -144,7 +144,7 @@ class ProductController {
             const product = await this.#_productModel.findById(id);
             if (!product) throw new NotFoundException("Product not found");
 
-            await deleteFromCloudinary(product.image);
+            if (product.image) await deleteFromCloudinary(product.image);
             await this.#_productModel.findByIdAndDelete(id);
             res.send({ success: true, message: "Product deleted" });
         } catch (err) {
