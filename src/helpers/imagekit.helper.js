@@ -9,15 +9,14 @@ import imagekit from "../config/imagekit.config.js";
  * @returns {Promise<string>}    - Yuklangan rasm URL si
  */
 export const uploadToImageKit = async (fileBuffer, originalName, folder) => {
-    const base64 = fileBuffer.toString("base64");
-
-    const result = await imagekit.upload({
-        file: base64,
+    const result = await imagekit.files.upload({
+        file: fileBuffer,
         fileName: `${Date.now()}-${originalName}`,
         folder: `/mossmenu/${folder}`,
         useUniqueFileName: true,
     });
 
+    console.log("✅ ImageKit'ga yuklandi:", result.url);
     return result.url;
 };
 
@@ -30,15 +29,14 @@ export const deleteFromImageKit = async (imageUrl) => {
     if (!imageUrl.includes("ik.imagekit.io")) return;
 
     try {
-        // URL dan file nomini olish
         const fileName = imageUrl.split("/").pop().split("?")[0];
 
-        const files = await imagekit.listFiles({
+        const files = await imagekit.files.list({
             searchQuery: `name = "${fileName}"`,
         });
 
         if (files && files.length > 0) {
-            await imagekit.deleteFile(files[0].fileId);
+            await imagekit.files.delete(files[0].fileId);
             console.log("ImageKit dan o'chirildi:", fileName);
         }
     } catch (e) {
