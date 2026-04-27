@@ -1,6 +1,7 @@
 import { Feedback } from "../models/feedback.model.js";
 import { User } from "../models/user.model.js";
 import { sendEMAil } from "../helpers/mail.helper.js";
+import { uploadToImageKit } from "../helpers/imagekit.helper.js"; // ✅ QO'SHILDI
 
 class FeedbackController {
     getPage = async (req, res) => {
@@ -35,7 +36,10 @@ class FeedbackController {
                 res.cookie(
                     "_f_error",
                     "Xabar maydoni bo'sh bo'lishi mumkin emas.",
-                    { httpOnly: true, maxAge: 10000 },
+                    {
+                        httpOnly: true,
+                        maxAge: 10000,
+                    },
                 );
                 return res.redirect("/feedback");
             }
@@ -43,19 +47,28 @@ class FeedbackController {
             const parsedRating = parseInt(rating);
             const finalRating =
                 parsedRating >= 1 && parsedRating <= 5 ? parsedRating : 5;
-
             const feedbackType = type === "complaint" ? "complaint" : "review";
+
+            // ✅ Rasm ImageKit ga yuklash (ixtiyoriy)
+            let imageUrl = undefined;
+            if (req.file) {
+                imageUrl = await uploadToImageKit(
+                    req.file.buffer,
+                    req.file.originalname,
+                    "feedbacks",
+                );
+            }
 
             await Feedback.create({
                 message: message.trim(),
                 type: feedbackType,
                 rating: finalRating,
-                image: req.file ? req.file.filename : undefined,
+                image: imageUrl, // ✅ URL (yoki undefined)
                 device_info: device_info || "none",
                 created_at: req.user.id,
             });
 
-            // Adminlarga chiroyli HTML email yuborish
+            // Adminlarga email yuborish (xato bo'lsa ham davom etadi)
             this.#notifyAdmins({
                 userName: req.user.name,
                 userEmail: req.user.email || "noma'lum",
@@ -71,7 +84,10 @@ class FeedbackController {
             res.cookie(
                 "_f_success",
                 "Fikringiz muvaffaqiyatli yuborildi! Rahmat.",
-                { httpOnly: true, maxAge: 10000 },
+                {
+                    httpOnly: true,
+                    maxAge: 10000,
+                },
             );
             res.redirect("/feedback");
         } catch (error) {
@@ -79,7 +95,10 @@ class FeedbackController {
             res.cookie(
                 "_f_error",
                 "Xatolik yuz berdi. Qaytadan urinib ko'ring.",
-                { httpOnly: true, maxAge: 10000 },
+                {
+                    httpOnly: true,
+                    maxAge: 10000,
+                },
             );
             res.redirect("/feedback");
         }
@@ -101,9 +120,7 @@ class FeedbackController {
         const typeColor = isComplaint ? "#dc2626" : "#16a34a";
         const typeBg = isComplaint ? "#fee2e2" : "#dcfce7";
         const typeIcon = isComplaint ? "⚠️" : "✨";
-
         const stars = "★".repeat(data.rating) + "☆".repeat(5 - data.rating);
-
         const subject = `${typeIcon} [MossMenu] Yangi ${typeLabel} — ${data.userName}`;
 
         const html = `
@@ -147,22 +164,16 @@ class FeedbackController {
                     <!-- USER INFO -->
                     <tr>
                         <td style="padding:20px 40px 0;">
-                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                            <table role="presentation" cellpadding="0" cellspacing="0">
                                 <tr>
+                                    <td style="padding-right:14px;">
+                                        <div style="width:48px; height:48px; border-radius:50%; background:linear-gradient(135deg, #c8622a, #f5a623); color:#ffffff; text-align:center; line-height:48px; font-size:18px; font-weight:700;">
+                                            ${(data.userName || "?")[0].toUpperCase()}
+                                        </div>
+                                    </td>
                                     <td>
-                                        <table role="presentation" cellpadding="0" cellspacing="0">
-                                            <tr>
-                                                <td style="padding-right:14px;">
-                                                    <div style="width:48px; height:48px; border-radius:50%; background:linear-gradient(135deg, #c8622a, #f5a623); color:#ffffff; text-align:center; line-height:48px; font-size:18px; font-weight:700;">
-                                                        ${(data.userName || "?")[0].toUpperCase()}
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div style="color:#1a1410; font-size:16px; font-weight:700;">${data.userName}</div>
-                                                    <div style="color:#7a6a5a; font-size:13px; margin-top:2px;">${data.userEmail}</div>
-                                                </td>
-                                            </tr>
-                                        </table>
+                                        <div style="color:#1a1410; font-size:16px; font-weight:700;">${data.userName}</div>
+                                        <div style="color:#7a6a5a; font-size:13px; margin-top:2px;">${data.userEmail}</div>
                                     </td>
                                 </tr>
                             </table>
@@ -237,12 +248,11 @@ class FeedbackController {
         </tr>
     </table>
 </body>
-</html>
-        `.trim();
+</html>`.trim();
 
         for (const admin of admins) {
             if (admin.email) {
-                sendEMAil(admin.email, subject, html, true); 
+                sendEMAil(admin.email, subject, html, true);
             }
         }
     };

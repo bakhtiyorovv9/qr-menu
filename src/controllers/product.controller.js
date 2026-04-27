@@ -1,12 +1,9 @@
 import { Product } from "../models/product.model.js";
 import { NotFoundException } from "../exceptions/not-found.exception.js";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const uploadDir = path.join(__dirname, "../../uploads");
+import {
+    uploadToImageKit,
+    deleteFromImageKit,
+} from "../helpers/imagekit.helper.js";
 
 class ProductController {
     #_productModel;
@@ -46,13 +43,12 @@ class ProductController {
     create = async (req, res, next) => {
         try {
             let { name, price, raiting, category_id } = req.body;
-            const image = req.file ? req.file.filename : req.body.image || "";
 
             price = Number(price);
             if (isNaN(price) || price < 0 || price > 1_000_000) {
                 return res.status(400).send({
                     success: false,
-                    message: "Narx 0 dan 1,000,000 so‘mgacha bo‘lishi kerak",
+                    message: "Narx 0 dan 1,000,000 so'mgacha bo'lishi kerak",
                 });
             }
 
@@ -61,11 +57,21 @@ class ProductController {
                 if (isNaN(raiting) || raiting < 1 || raiting > 5) {
                     return res.status(400).send({
                         success: false,
-                        message: "Reyting 1–5 oralig‘ida bo‘lishi kerak",
+                        message: "Reyting 1-5 oraligida bo'lishi kerak",
                     });
                 }
             } else {
                 raiting = 4;
+            }
+
+            // ✅ ImageKit ga yuklash
+            let imageUrl = req.body.image || "";
+            if (req.file) {
+                imageUrl = await uploadToImageKit(
+                    req.file.buffer,
+                    req.file.originalname,
+                    "products",
+                );
             }
 
             const newProduct = await this.#_productModel.create({
@@ -73,15 +79,11 @@ class ProductController {
                 price,
                 raiting,
                 category_id,
-                image,
+                image: imageUrl,
             });
 
             res.status(201).send({ success: true, data: newProduct });
         } catch (err) {
-            if (req.file) {
-                const filePath = path.join(uploadDir, req.file.filename);
-                if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-            }
             next(err);
         }
     };
@@ -100,7 +102,7 @@ class ProductController {
                     return res.status(400).send({
                         success: false,
                         message:
-                            "Narx 0 dan 1,000,000 so‘mgacha bo‘lishi kerak",
+                            "Narx 0 dan 1,000,000 so'mgacha bo'lishi kerak",
                     });
                 }
                 updates.price = price;
@@ -111,18 +113,21 @@ class ProductController {
                 if (isNaN(raiting) || raiting < 1 || raiting > 5) {
                     return res.status(400).send({
                         success: false,
-                        message: "Reyting 1–5 oralig‘ida bo‘lishi kerak",
+                        message: "Reyting 1-5 oraligida bo'lishi kerak",
                     });
                 }
                 updates.raiting = raiting;
             }
 
             if (req.file) {
-                if (existing.image) {
-                    const oldPath = path.join(uploadDir, existing.image);
-                    if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-                }
-                updates.image = req.file.filename;
+                // ✅ Eski rasmni ImageKit dan o'chir
+                await deleteFromImageKit(existing.image);
+                // ✅ Yangi rasmni ImageKit ga yuklash
+                updates.image = await uploadToImageKit(
+                    req.file.buffer,
+                    req.file.originalname,
+                    "products",
+                );
             }
 
             const updated = await this.#_productModel.findByIdAndUpdate(
@@ -132,10 +137,6 @@ class ProductController {
             );
             res.send({ success: true, data: updated });
         } catch (err) {
-            if (req.file) {
-                const filePath = path.join(uploadDir, req.file.filename);
-                if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-            }
             next(err);
         }
     };
@@ -146,10 +147,8 @@ class ProductController {
             const product = await this.#_productModel.findById(id);
             if (!product) throw new NotFoundException("Product not found");
 
-            if (product.image) {
-                const filePath = path.join(uploadDir, product.image);
-                if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-            }
+            // ✅ ImageKit dan o'chirish
+            await deleteFromImageKit(product.image);
 
             await this.#_productModel.findByIdAndDelete(id);
             res.send({ success: true, message: "Product deleted" });

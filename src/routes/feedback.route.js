@@ -1,22 +1,11 @@
 import { Router } from "express";
 import multer from "multer";
-import path from "node:path";
 import { isAuth } from "../middleware/protected.middleware.js";
 import feedbackController from "../controllers/feedback.controller.js";
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, path.join(process.cwd(), "uploads"));
-    },
-    filename: (req, file, cb) => {
-        const unique = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
-        const ext = path.extname(file.originalname);
-        cb(null, `feedback-${unique}${ext}`);
-    },
-});
-
+// ✅ diskStorage o'rniga memoryStorage (ImageKit uchun req.file.buffer kerak)
 const upload = multer({
-    storage,
+    storage: multer.memoryStorage(),
     limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         const allowed = ["image/jpeg", "image/png", "image/webp"];
@@ -29,7 +18,6 @@ const upload = multer({
 const feedbackRouter = Router();
 
 feedbackRouter.get("/", feedbackController.getPage);
-
 feedbackRouter.post(
     "/",
     isAuth,

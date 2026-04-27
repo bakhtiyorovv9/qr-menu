@@ -2,8 +2,10 @@ import { Category } from "../models/category.model.js";
 import { Product } from "../models/product.model.js";
 import { User } from "../models/user.model.js";
 import { Feedback } from "../models/feedback.model.js";
-import fs from "node:fs";
-import path from "node:path";
+import {
+    uploadToImageKit,
+    deleteFromImageKit,
+} from "../helpers/imagekit.helper.js";
 
 class AdminController {
     #getAdminMeta = (req) => ({
@@ -36,19 +38,7 @@ class AdminController {
         },
     };
 
-    #deleteFile = (filePath) => {
-        if (!filePath) return;
-        try {
-            const full = path.join(
-                process.cwd(),
-                filePath.startsWith("/") ? filePath.slice(1) : filePath,
-            );
-            if (fs.existsSync(full)) fs.unlinkSync(full);
-        } catch (e) {
-            console.warn("Faylni o'chirishda xato:", e.message);
-        }
-    };
-
+    // ── DASHBOARD ─────────────────────────────────────────────────────────────
     getAdminDashboard = async (req, res) => {
         try {
             const [totalProducts, totalCategories, totalUsers] =
@@ -72,6 +62,7 @@ class AdminController {
         }
     };
 
+    // ── KATEGORIYA: LIST ──────────────────────────────────────────────────────
     getCategoryList = async (req, res) => {
         try {
             const categories = await Category.find()
@@ -110,6 +101,7 @@ class AdminController {
         }
     };
 
+    // ── KATEGORIYA: CREATE ────────────────────────────────────────────────────
     getCreateCategory = (req, res) => {
         const f = this.#flash.get(req, res, ["error", "success", "oldName"]);
         res.render("admin/create-category", {
@@ -126,7 +118,7 @@ class AdminController {
     postCreateCategory = async (req, res) => {
         try {
             const { name } = req.body;
-            const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
+
             if (!name || name.trim().length < 1) {
                 this.#flash.set(res, {
                     error: "Kategoriya nomi kamida 1 ta belgidan iborat bo'lishi kerak.",
@@ -142,6 +134,17 @@ class AdminController {
                 });
                 return res.redirect("/admin/categories/create");
             }
+
+            // ✅ ImageKit ga yuklash
+            let imagePath = null;
+            if (req.file) {
+                imagePath = await uploadToImageKit(
+                    req.file.buffer,
+                    req.file.originalname,
+                    "categories",
+                );
+            }
+
             await Category.create({
                 name: name.trim(),
                 image: imagePath,
@@ -160,6 +163,7 @@ class AdminController {
         }
     };
 
+    // ── KATEGORIYA: EDIT ──────────────────────────────────────────────────────
     getEditCategory = async (req, res) => {
         try {
             const category = await Category.findById(req.params.id).lean();
@@ -186,6 +190,7 @@ class AdminController {
         try {
             const { name, icon, removeImage } = req.body;
             const { id } = req.params;
+
             if (!name || name.trim().length < 1) {
                 this.#flash.set(res, {
                     error: "Kategoriya nomi bo'sh bo'lishi mumkin emas.",
@@ -207,17 +212,26 @@ class AdminController {
                 this.#flash.set(res, { error: "Kategoriya topilmadi." });
                 return res.redirect("/admin/categories");
             }
+
             const updateData = {
                 name: name.trim(),
                 icon: icon?.trim() || undefined,
             };
+
             if (req.file) {
-                this.#deleteFile(existing.image);
-                updateData.image = `/uploads/${req.file.filename}`;
+                // ✅ Eski rasmni ImageKit dan o'chir, yangi yuklash
+                await deleteFromImageKit(existing.image);
+                updateData.image = await uploadToImageKit(
+                    req.file.buffer,
+                    req.file.originalname,
+                    "categories",
+                );
             } else if (removeImage === "1") {
-                this.#deleteFile(existing.image);
+                // ✅ Faqat o'chirish
+                await deleteFromImageKit(existing.image);
                 updateData.image = null;
             }
+
             await Category.findByIdAndUpdate(id, updateData);
             this.#flash.set(res, {
                 success: `"${name.trim()}" kategoriyasi muvaffaqiyatli yangilandi!`,
@@ -232,6 +246,7 @@ class AdminController {
         }
     };
 
+    // ── KATEGORIYA: DELETE ────────────────────────────────────────────────────
     deleteCategory = async (req, res) => {
         try {
             const { id } = req.params;
@@ -249,7 +264,8 @@ class AdminController {
                 });
                 return res.redirect("/admin/categories");
             }
-            this.#deleteFile(category.image);
+            // ✅ ImageKit dan o'chirish
+            await deleteFromImageKit(category.image);
             await Category.findByIdAndDelete(id);
             this.#flash.set(res, {
                 success: `"${category.name}" kategoriyasi o'chirildi.`,
@@ -264,6 +280,7 @@ class AdminController {
         }
     };
 
+    // ── MAHSULOT: LIST ────────────────────────────────────────────────────────
     getProductList = async (req, res) => {
         try {
             const products = await Product.find()
@@ -285,6 +302,7 @@ class AdminController {
         }
     };
 
+    // ── MAHSULOT: CREATE ──────────────────────────────────────────────────────
     getCreateProduct = async (req, res) => {
         try {
             const categories = await Category.find().sort({ name: 1 }).lean();
@@ -295,7 +313,6 @@ class AdminController {
                 "oldPrice",
                 "oldRaiting",
                 "oldCategory",
-                "oldImage",
             ]);
             res.render("admin/create-product", {
                 title: "Mahsulot qo'shish",
@@ -309,7 +326,6 @@ class AdminController {
                 oldPrice: f.oldPrice,
                 oldRaiting: f.oldRaiting,
                 oldCategory: f.oldCategory,
-                oldImage: f.oldImage,
             });
         } catch (err) {
             console.error("Create product GET error:", err);
@@ -319,10 +335,8 @@ class AdminController {
 
     postCreateProduct = async (req, res) => {
         try {
-            const { name, price, raiting, category_id, image } = req.body;
-            const imagePath = req.file
-                ? `/uploads/${req.file.filename}`
-                : image?.trim();
+            const { name, price, raiting, category_id } = req.body;
+
             const errors = [];
             if (!name?.trim()) errors.push("Mahsulot nomi kiritilmadi.");
             if (!price || parseFloat(price) < 0.1)
@@ -330,7 +344,8 @@ class AdminController {
             if (!raiting || +raiting < 1 || +raiting > 5)
                 errors.push("Reyting 1-5 oraligida bolishi kerak.");
             if (!category_id) errors.push("Kategoriya tanlanmadi.");
-            if (!imagePath) errors.push("Rasm kiritilmadi.");
+            if (!req.file) errors.push("Rasm yuklanmadi.");
+
             if (errors.length > 0) {
                 this.#flash.set(res, {
                     error: errors.join(" | "),
@@ -338,10 +353,17 @@ class AdminController {
                     oldPrice: price,
                     oldRaiting: raiting,
                     oldCategory: category_id,
-                    oldImage: image,
                 });
                 return res.redirect("/admin/products/create");
             }
+
+            // ✅ ImageKit ga yuklash
+            const imagePath = await uploadToImageKit(
+                req.file.buffer,
+                req.file.originalname,
+                "products",
+            );
+
             await Product.create({
                 name: name.trim(),
                 price: parseFloat(price),
@@ -362,6 +384,7 @@ class AdminController {
         }
     };
 
+    // ── MAHSULOT: EDIT ────────────────────────────────────────────────────────
     getEditProduct = async (req, res) => {
         try {
             const product = await Product.findById(req.params.id).lean();
@@ -390,6 +413,7 @@ class AdminController {
         try {
             const { name, price, raiting, category_id, removeImage } = req.body;
             const { id } = req.params;
+
             const errors = [];
             if (!name?.trim()) errors.push("Mahsulot nomi kiritilmadi.");
             if (!price || parseFloat(price) < 0.1)
@@ -397,6 +421,7 @@ class AdminController {
             if (!raiting || +raiting < 1 || +raiting > 5)
                 errors.push("Reyting 1-5 oraligida bolishi kerak.");
             if (!category_id) errors.push("Kategoriya tanlanmadi.");
+
             if (errors.length > 0) {
                 this.#flash.set(res, { error: errors.join(" | ") });
                 return res.redirect(`/admin/products/${id}/edit`);
@@ -406,19 +431,27 @@ class AdminController {
                 this.#flash.set(res, { error: "Mahsulot topilmadi." });
                 return res.redirect("/admin/products");
             }
+
             const updateData = {
                 name: name.trim(),
                 price: parseFloat(price),
                 raiting: parseInt(raiting),
                 category_id,
             };
+
             if (req.file) {
-                this.#deleteFile(existing.image);
-                updateData.image = `/uploads/${req.file.filename}`;
+                // ✅ Eski rasmni ImageKit dan o'chir, yangi yuklash
+                await deleteFromImageKit(existing.image);
+                updateData.image = await uploadToImageKit(
+                    req.file.buffer,
+                    req.file.originalname,
+                    "products",
+                );
             } else if (removeImage === "1") {
-                this.#deleteFile(existing.image);
+                await deleteFromImageKit(existing.image);
                 updateData.image = null;
             }
+
             await Product.findByIdAndUpdate(id, updateData);
             this.#flash.set(res, {
                 success: `"${name.trim()}" mahsuloti muvaffaqiyatli yangilandi!`,
@@ -433,6 +466,7 @@ class AdminController {
         }
     };
 
+    // ── MAHSULOT: DELETE ──────────────────────────────────────────────────────
     deleteProduct = async (req, res) => {
         try {
             const { id } = req.params;
@@ -441,7 +475,8 @@ class AdminController {
                 this.#flash.set(res, { error: "Mahsulot topilmadi." });
                 return res.redirect("/admin/products");
             }
-            this.#deleteFile(product.image);
+            // ✅ ImageKit dan o'chirish
+            await deleteFromImageKit(product.image);
             await Product.findByIdAndDelete(id);
             this.#flash.set(res, {
                 success: `"${product.name}" mahsuloti o'chirildi.`,
@@ -456,6 +491,7 @@ class AdminController {
         }
     };
 
+    // ── FEEDBACKLAR: LIST ─────────────────────────────────────────────────────
     getFeedbackList = async (req, res) => {
         try {
             const { type } = req.query;
@@ -502,6 +538,7 @@ class AdminController {
         }
     };
 
+    // ── FEEDBACKLAR: DELETE ───────────────────────────────────────────────────
     deleteFeedback = async (req, res) => {
         try {
             const { id } = req.params;
@@ -510,7 +547,8 @@ class AdminController {
                 this.#flash.set(res, { error: "Feedback topilmadi." });
                 return res.redirect("/admin/feedbacks");
             }
-            this.#deleteFile(feedback.image);
+            // ✅ ImageKit dan o'chirish
+            await deleteFromImageKit(feedback.image);
             await Feedback.findByIdAndDelete(id);
             this.#flash.set(res, {
                 success: "Feedback muvaffaqiyatli o'chirildi.",
@@ -525,11 +563,11 @@ class AdminController {
         }
     };
 
+    // ── FOYDALANUVCHILAR: LIST ────────────────────────────────────────────────
     getUserList = async (req, res) => {
         try {
             const { role } = req.query;
             const filter = role ? { role } : {};
-
             const [users, totalCount, userCount, adminCount] =
                 await Promise.all([
                     User.find(filter).sort({ createdAt: -1 }).lean(),
@@ -537,7 +575,6 @@ class AdminController {
                     User.countDocuments({ role: "USER" }),
                     User.countDocuments({ role: "ADMIN" }),
                 ]);
-
             const usersFormatted = await Promise.all(
                 users.map(async (u) => ({
                     ...u,
@@ -553,7 +590,6 @@ class AdminController {
                     }),
                 })),
             );
-
             const f = this.#flash.get(req, res, ["success", "error"]);
             res.render("admin/users", {
                 title: "Foydalanuvchilar",
@@ -573,11 +609,11 @@ class AdminController {
         }
     };
 
+    // ── FOYDALANUVCHILAR: DELETE ──────────────────────────────────────────────
     deleteUser = async (req, res) => {
         try {
             const { id } = req.params;
             const user = await User.findById(id);
-
             if (!user) {
                 this.#flash.set(res, { error: "Foydalanuvchi topilmadi." });
                 return res.redirect("/admin/users");
@@ -588,7 +624,6 @@ class AdminController {
                 });
                 return res.redirect("/admin/users");
             }
-
             await User.findByIdAndDelete(id);
             this.#flash.set(res, {
                 success: `"${user.name}" foydalanuvchisi o'chirildi.`,
@@ -603,6 +638,7 @@ class AdminController {
         }
     };
 
+    // ── LOGOUT ────────────────────────────────────────────────────────────────
     logout = (req, res) => {
         res.clearCookie("token", { signed: true, httpOnly: true });
         res.clearCookie("refreshToken", { signed: true, httpOnly: true });

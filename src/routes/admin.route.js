@@ -1,48 +1,20 @@
 import { Router } from "express";
 import multer from "multer";
-import path from "node:path";
 import { isAdmin } from "../middleware/protected.middleware.js";
 import adminController from "../controllers/admin.controller.js";
 
 const router = Router();
 
-const catStorage = multer.diskStorage({
-    destination: (req, file, cb) =>
-        cb(null, path.join(process.cwd(), "uploads")),
-    filename: (req, file, cb) => {
-        const ext = path.extname(file.originalname);
-        cb(null, `cat-${Date.now()}-${Math.round(Math.random() * 1e6)}${ext}`);
-    },
-});
-const uploadCat = multer({
-    storage: catStorage,
+// ── MULTER: memoryStorage (ImageKit uchun disk emas RAM) ──────────────────────
+// diskStorage o'rniga memoryStorage — fayl buffer sifatida keladi (req.file.buffer)
+const upload = multer({
+    storage: multer.memoryStorage(),
     fileFilter: (req, file, cb) => {
         ["image/jpeg", "image/png", "image/webp"].includes(file.mimetype)
             ? cb(null, true)
-            : cb(new Error("Faqat rasm fayllari"), false);
+            : cb(new Error("Faqat rasm fayllari (jpg, png, webp)"), false);
     },
-    limits: { fileSize: 5 * 1024 * 1024 },
-});
-
-const prodStorage = multer.diskStorage({
-    destination: (req, file, cb) =>
-        cb(null, path.join(process.cwd(), "uploads")),
-    filename: (req, file, cb) => {
-        const ext = path.extname(file.originalname);
-        cb(
-            null,
-            `product-${Date.now()}-${Math.round(Math.random() * 1e6)}${ext}`,
-        );
-    },
-});
-const uploadProd = multer({
-    storage: prodStorage,
-    fileFilter: (req, file, cb) => {
-        ["image/jpeg", "image/png", "image/webp"].includes(file.mimetype)
-            ? cb(null, true)
-            : cb(new Error("Faqat rasm fayllari"), false);
-    },
-    limits: { fileSize: 5 * 1024 * 1024 },
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 });
 
 router.get("/admin", isAdmin, adminController.getAdminDashboard);
@@ -56,7 +28,7 @@ router.get(
 router.post(
     "/admin/categories/create",
     isAdmin,
-    uploadCat.single("image"),
+    upload.single("image"),
     adminController.postCreateCategory,
 );
 router.get(
@@ -67,7 +39,7 @@ router.get(
 router.post(
     "/admin/categories/:id/edit",
     isAdmin,
-    uploadCat.single("image"),
+    upload.single("image"),
     adminController.postEditCategory,
 );
 router.post(
@@ -81,14 +53,14 @@ router.get("/admin/products/create", isAdmin, adminController.getCreateProduct);
 router.post(
     "/admin/products/create",
     isAdmin,
-    uploadProd.single("image_file"),
+    upload.single("image_file"),
     adminController.postCreateProduct,
 );
 router.get("/admin/products/:id/edit", isAdmin, adminController.getEditProduct);
 router.post(
     "/admin/products/:id/edit",
     isAdmin,
-    uploadProd.single("image_file"),
+    upload.single("image_file"),
     adminController.postEditProduct,
 );
 router.post(

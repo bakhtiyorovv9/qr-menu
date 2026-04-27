@@ -18,7 +18,7 @@ import adminRouter from "./routes/admin.route.js";
 import menuRouter from "./routes/menu.router.js";
 import feedbackRouter from "./routes/feedback.route.js";
 import { attachUser } from "./middleware/protected.middleware.js";
-
+import fs from "node:fs"
 config();
 
 fs.mkdirSync(path.join(process.cwd(), "uploads"), { recursive: true });

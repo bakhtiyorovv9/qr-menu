@@ -1,12 +1,9 @@
 import { Category } from "../models/category.model.js";
 import { NotFoundException } from "../exceptions/not-found.exception.js";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const uploadDir = path.join(__dirname, "../../uploads");
+import {
+    uploadToImageKit,
+    deleteFromImageKit,
+} from "../helpers/imagekit.helper.js";
 
 class CategoryController {
     #_categoryModel;
@@ -28,19 +25,25 @@ class CategoryController {
     create = async (req, res, next) => {
         try {
             const { name, icon, order } = req.body;
-            const image = req.file ? req.file.filename : "";
+
+            // ✅ ImageKit ga yuklash
+            let imageUrl = "";
+            if (req.file) {
+                imageUrl = await uploadToImageKit(
+                    req.file.buffer,
+                    req.file.originalname,
+                    "categories",
+                );
+            }
+
             const newCategory = await this.#_categoryModel.create({
                 name,
-                image,
+                image: imageUrl,
                 icon,
                 order,
             });
             res.status(201).send({ success: true, data: newCategory });
         } catch (err) {
-            if (req.file) {
-                const filePath = path.join(uploadDir, req.file.filename);
-                if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-            }
             next(err);
         }
     };
@@ -52,12 +55,16 @@ class CategoryController {
             if (!existing) throw new NotFoundException("Category not found");
 
             let updates = { ...req.body };
+
             if (req.file) {
-                if (existing.image) {
-                    const oldPath = path.join(uploadDir, existing.image);
-                    if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-                }
-                updates.image = req.file.filename;
+                // ✅ Eski rasmni ImageKit dan o'chir
+                await deleteFromImageKit(existing.image);
+                // ✅ Yangi rasmni ImageKit ga yuklash
+                updates.image = await uploadToImageKit(
+                    req.file.buffer,
+                    req.file.originalname,
+                    "categories",
+                );
             }
 
             const updated = await this.#_categoryModel.findByIdAndUpdate(
@@ -67,10 +74,6 @@ class CategoryController {
             );
             res.send({ success: true, data: updated });
         } catch (err) {
-            if (req.file) {
-                const filePath = path.join(uploadDir, req.file.filename);
-                if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-            }
             next(err);
         }
     };
@@ -81,10 +84,8 @@ class CategoryController {
             const category = await this.#_categoryModel.findById(id);
             if (!category) throw new NotFoundException("Category not found");
 
-            if (category.image) {
-                const filePath = path.join(uploadDir, category.image);
-                if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-            }
+            // ✅ ImageKit dan o'chirish
+            await deleteFromImageKit(category.image);
 
             await this.#_categoryModel.findByIdAndDelete(id);
             res.send({ success: true, message: "Category deleted" });
