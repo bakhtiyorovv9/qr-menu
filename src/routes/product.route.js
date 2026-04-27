@@ -5,6 +5,7 @@ import {
     UpdateProductSchema,
 } from "../schemas/product.schema.js";
 import productController from "../controllers/product.controller.js";
+import upload from "../middleware/upload.middleware.js"; 
 
 const productRouter = Router();
 
@@ -13,11 +14,13 @@ productRouter
     .get("/:id", productController.getOne)
     .post(
         "/",
+        upload.single("image"), 
         ValidationMiddleware(CreateProductSchema),
         productController.create,
     )
     .patch(
         "/:id",
+        upload.single("image"),
         ValidationMiddleware(UpdateProductSchema),
         productController.update,
     )

@@ -1,7 +1,7 @@
 import { Feedback } from "../models/feedback.model.js";
 import { User } from "../models/user.model.js";
 import { sendEMAil } from "../helpers/mail.helper.js";
-import { uploadToImageKit } from "../helpers/cloudinary.helper.js"; // ✅ QO'SHILDI
+import { uploadToCloudinary } from "../helpers/cloudinary.helper.js"; // ✅ Cloudinary funksiyasi
 
 class FeedbackController {
     getPage = async (req, res) => {
@@ -49,10 +49,10 @@ class FeedbackController {
                 parsedRating >= 1 && parsedRating <= 5 ? parsedRating : 5;
             const feedbackType = type === "complaint" ? "complaint" : "review";
 
-            // ✅ Rasm ImageKit ga yuklash (ixtiyoriy)
+            // ✅ Rasm Cloudinary ga yuklash (ixtiyoriy)
             let imageUrl = undefined;
             if (req.file) {
-                imageUrl = await uploadToImageKit(
+                imageUrl = await uploadToCloudinary(
                     req.file.buffer,
                     req.file.originalname,
                     "feedbacks",

@@ -1,8 +1,8 @@
 import { Product } from "../models/product.model.js";
 import { NotFoundException } from "../exceptions/not-found.exception.js";
 import {
-    uploadToImageKit,
-    deleteFromImageKit,
+    uploadToCloudinary,
+    deleteFromCloudinary,
 } from "../helpers/cloudinary.helper.js";
 
 class ProductController {
@@ -64,10 +64,9 @@ class ProductController {
                 raiting = 4;
             }
 
-            // ✅ ImageKit ga yuklash
             let imageUrl = req.body.image || "";
             if (req.file) {
-                imageUrl = await uploadToImageKit(
+                imageUrl = await uploadToCloudinary(
                     req.file.buffer,
                     req.file.originalname,
                     "products",
@@ -120,10 +119,8 @@ class ProductController {
             }
 
             if (req.file) {
-                // ✅ Eski rasmni ImageKit dan o'chir
-                await deleteFromImageKit(existing.image);
-                // ✅ Yangi rasmni ImageKit ga yuklash
-                updates.image = await uploadToImageKit(
+                await deleteFromCloudinary(existing.image);
+                updates.image = await uploadToCloudinary(
                     req.file.buffer,
                     req.file.originalname,
                     "products",
@@ -147,9 +144,7 @@ class ProductController {
             const product = await this.#_productModel.findById(id);
             if (!product) throw new NotFoundException("Product not found");
 
-            // ✅ ImageKit dan o'chirish
-            await deleteFromImageKit(product.image);
-
+            await deleteFromCloudinary(product.image);
             await this.#_productModel.findByIdAndDelete(id);
             res.send({ success: true, message: "Product deleted" });
         } catch (err) {

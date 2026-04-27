@@ -647,7 +647,6 @@
 // }
 
 // export default new AdminController();
-
 import { Category } from "../models/category.model.js";
 import { Product } from "../models/product.model.js";
 import { User } from "../models/user.model.js";
@@ -688,7 +687,7 @@ class AdminController {
         },
     };
 
-    // ── DASHBOARD ─────────────────────────────────────────────────────────────
+    // DASHBOARD
     getAdminDashboard = async (req, res) => {
         try {
             const [totalProducts, totalCategories, totalUsers] =
@@ -712,7 +711,7 @@ class AdminController {
         }
     };
 
-    // ── KATEGORIYA: LIST ──────────────────────────────────────────────────────
+    // KATEGORIYA: LIST
     getCategoryList = async (req, res) => {
         try {
             const categories = await Category.find()
@@ -751,7 +750,7 @@ class AdminController {
         }
     };
 
-    // ── KATEGORIYA: CREATE ────────────────────────────────────────────────────
+    // KATEGORIYA: CREATE
     getCreateCategory = (req, res) => {
         const f = this.#flash.get(req, res, ["error", "success", "oldName"]);
         res.render("admin/create-category", {
@@ -785,12 +784,12 @@ class AdminController {
                 return res.redirect("/admin/categories/create");
             }
 
-            // ✅ Cloudinary ga yuklash
             let imagePath = null;
             if (req.file) {
                 imagePath = await uploadToCloudinary(
                     req.file.buffer,
-                    "categories",
+                    req.file.originalname,
+                    "categories"
                 );
             }
 
@@ -812,7 +811,7 @@ class AdminController {
         }
     };
 
-    // ── KATEGORIYA: EDIT ──────────────────────────────────────────────────────
+    // KATEGORIYA: EDIT
     getEditCategory = async (req, res) => {
         try {
             const category = await Category.findById(req.params.id).lean();
@@ -868,14 +867,14 @@ class AdminController {
             };
 
             if (req.file) {
-                // ✅ Eski rasmni Cloudinary dan o'chir, yangi yuklash
-                await deleteFromCloudinary(existing.image);
+                if (existing.image) await deleteFromCloudinary(existing.image);
                 updateData.image = await uploadToCloudinary(
                     req.file.buffer,
-                    "categories",
+                    req.file.originalname,
+                    "categories"
                 );
             } else if (removeImage === "1") {
-                await deleteFromCloudinary(existing.image);
+                if (existing.image) await deleteFromCloudinary(existing.image);
                 updateData.image = null;
             }
 
@@ -893,7 +892,7 @@ class AdminController {
         }
     };
 
-    // ── KATEGORIYA: DELETE ────────────────────────────────────────────────────
+    // KATEGORIYA: DELETE
     deleteCategory = async (req, res) => {
         try {
             const { id } = req.params;
@@ -911,8 +910,7 @@ class AdminController {
                 });
                 return res.redirect("/admin/categories");
             }
-            // ✅ Cloudinary dan o'chirish
-            await deleteFromCloudinary(category.image);
+            if (category.image) await deleteFromCloudinary(category.image);
             await Category.findByIdAndDelete(id);
             this.#flash.set(res, {
                 success: `"${category.name}" kategoriyasi o'chirildi.`,
@@ -927,7 +925,7 @@ class AdminController {
         }
     };
 
-    // ── MAHSULOT: LIST ────────────────────────────────────────────────────────
+    // MAHSULOT: LIST
     getProductList = async (req, res) => {
         try {
             const products = await Product.find()
@@ -949,7 +947,7 @@ class AdminController {
         }
     };
 
-    // ── MAHSULOT: CREATE ──────────────────────────────────────────────────────
+    // MAHSULOT: CREATE
     getCreateProduct = async (req, res) => {
         try {
             const categories = await Category.find().sort({ name: 1 }).lean();
@@ -1004,10 +1002,10 @@ class AdminController {
                 return res.redirect("/admin/products/create");
             }
 
-            // ✅ Cloudinary ga yuklash
             const imagePath = await uploadToCloudinary(
                 req.file.buffer,
-                "products",
+                req.file.originalname,
+                "products"
             );
 
             await Product.create({
@@ -1030,7 +1028,7 @@ class AdminController {
         }
     };
 
-    // ── MAHSULOT: EDIT ────────────────────────────────────────────────────────
+    // MAHSULOT: EDIT
     getEditProduct = async (req, res) => {
         try {
             const product = await Product.findById(req.params.id).lean();
@@ -1086,14 +1084,14 @@ class AdminController {
             };
 
             if (req.file) {
-                // ✅ Eski rasmni Cloudinary dan o'chir, yangi yuklash
-                await deleteFromCloudinary(existing.image);
+                if (existing.image) await deleteFromCloudinary(existing.image);
                 updateData.image = await uploadToCloudinary(
                     req.file.buffer,
-                    "products",
+                    req.file.originalname,
+                    "products"
                 );
             } else if (removeImage === "1") {
-                await deleteFromCloudinary(existing.image);
+                if (existing.image) await deleteFromCloudinary(existing.image);
                 updateData.image = null;
             }
 
@@ -1111,7 +1109,7 @@ class AdminController {
         }
     };
 
-    // ── MAHSULOT: DELETE ──────────────────────────────────────────────────────
+    // MAHSULOT: DELETE
     deleteProduct = async (req, res) => {
         try {
             const { id } = req.params;
@@ -1120,8 +1118,7 @@ class AdminController {
                 this.#flash.set(res, { error: "Mahsulot topilmadi." });
                 return res.redirect("/admin/products");
             }
-            // ✅ Cloudinary dan o'chirish
-            await deleteFromCloudinary(product.image);
+            if (product.image) await deleteFromCloudinary(product.image);
             await Product.findByIdAndDelete(id);
             this.#flash.set(res, {
                 success: `"${product.name}" mahsuloti o'chirildi.`,
@@ -1136,7 +1133,7 @@ class AdminController {
         }
     };
 
-    // ── FEEDBACKLAR: LIST ─────────────────────────────────────────────────────
+    // FEEDBACKLAR: LIST
     getFeedbackList = async (req, res) => {
         try {
             const { type } = req.query;
@@ -1183,7 +1180,7 @@ class AdminController {
         }
     };
 
-    // ── FEEDBACKLAR: DELETE ───────────────────────────────────────────────────
+    // FEEDBACKLAR: DELETE
     deleteFeedback = async (req, res) => {
         try {
             const { id } = req.params;
@@ -1192,8 +1189,7 @@ class AdminController {
                 this.#flash.set(res, { error: "Feedback topilmadi." });
                 return res.redirect("/admin/feedbacks");
             }
-            // ✅ Cloudinary dan o'chirish
-            await deleteFromCloudinary(feedback.image);
+            if (feedback.image) await deleteFromCloudinary(feedback.image);
             await Feedback.findByIdAndDelete(id);
             this.#flash.set(res, {
                 success: "Feedback muvaffaqiyatli o'chirildi.",
@@ -1208,7 +1204,7 @@ class AdminController {
         }
     };
 
-    // ── FOYDALANUVCHILAR: LIST ────────────────────────────────────────────────
+    // FOYDALANUVCHILAR: LIST
     getUserList = async (req, res) => {
         try {
             const { role } = req.query;
@@ -1254,7 +1250,7 @@ class AdminController {
         }
     };
 
-    // ── FOYDALANUVCHILAR: DELETE ──────────────────────────────────────────────
+    // FOYDALANUVCHILAR: DELETE
     deleteUser = async (req, res) => {
         try {
             const { id } = req.params;
@@ -1283,7 +1279,7 @@ class AdminController {
         }
     };
 
-    // ── LOGOUT ────────────────────────────────────────────────────────────────
+    // LOGOUT
     logout = (req, res) => {
         res.clearCookie("token", { signed: true, httpOnly: true });
         res.clearCookie("refreshToken", { signed: true, httpOnly: true });

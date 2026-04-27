@@ -18,7 +18,6 @@ const storage = multer.diskStorage({
     },
 });
 
-// Faqat rasm fayllari
 const fileFilter = (req, file, cb) => {
     const allowed = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
     const ext = path.extname(file.originalname).toLowerCase();
@@ -29,8 +28,11 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
-export const upload = multer({
+const upload = multer({
     storage,
     fileFilter,
-    limits: { fileSize: 5 * 1024 * 1024 }, // max 5MB
+    limits: { fileSize: 5 * 1024 * 1024 },
 });
+
+export { upload };
+export default upload; // ✅ default export qo'shildi
