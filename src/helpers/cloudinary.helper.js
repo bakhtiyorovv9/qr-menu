@@ -33,11 +33,19 @@ export const uploadToCloudinary = (buffer, originalName, folder) => {
 
 export const deleteFromCloudinary = async (imageUrl) => {
     if (!imageUrl) return;
-    // URL dan public_id ni ajratib olish
-    const parts = imageUrl.split("/");
-    const filenameWithExt = parts.pop();
-    const filename = filenameWithExt.split(".")[0];
-    const folder = parts.slice(parts.indexOf("upload") + 2).join("/");
-    const publicId = folder ? `${folder}/${filename}` : filename;
-    await cloudinary.uploader.destroy(publicId);
+    try {
+        // Cloudinary URL formatidan public_id ajratib olish
+        // Misol: https://res.cloudinary.com/demo/image/upload/v1234567890/categories/filename.jpg
+        const uploadIndex = imageUrl.indexOf("/upload/");
+        if (uploadIndex === -1) return;
+        // /upload/ dan keyingi qism: v1234567890/categories/filename.jpg
+        const afterUpload = imageUrl.slice(uploadIndex + 8);
+        // Version prefixini olib tashlash (v1234567890/)
+        const withoutVersion = afterUpload.replace(/^v\d+\//, "");
+        // Kengaytmani olib tashlash
+        const publicId = withoutVersion.replace(/\.[^/.]+$/, "");
+        await cloudinary.uploader.destroy(publicId);
+    } catch (err) {
+        console.error("Cloudinary delete error:", err);
+    }
 };

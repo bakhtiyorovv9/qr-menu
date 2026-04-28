@@ -300,15 +300,134 @@
             .search-box { width: 100%; max-width: 420px; }
         }
         @media (max-width: 720px) { .menu-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 640px) {
-            nav { padding: 0 20px; }
+
+        /* ===== MOBILE BURGER ===== */
+        .burger {
+            display: none;
+            background: none; border: none; cursor: pointer;
+            width: 40px; height: 40px; padding: 0;
+            position: relative;
+            z-index: 110;
+        }
+        .burger span {
+            display: block;
+            width: 22px; height: 2px;
+            background: var(--text);
+            margin: 5px auto;
+            border-radius: 2px;
+            transition: transform .3s, opacity .3s;
+        }
+        .burger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+        .burger.open span:nth-child(2) { opacity: 0; }
+        .burger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+        .mobile-menu {
+            position: fixed; top: 0; right: -100%;
+            width: 80%; max-width: 320px; height: 100vh;
+            background: var(--surface);
+            box-shadow: -8px 0 32px rgba(26,20,16,.12);
+            transition: right .3s ease;
+            z-index: 105; padding: 88px 24px 24px;
+            display: flex; flex-direction: column;
+            overflow-y: auto;
+        }
+        .mobile-menu.open { right: 0; }
+        .mobile-menu a {
+            display: flex; align-items: center; gap: 12px;
+            padding: 14px 16px; border-radius: 12px;
+            font-size: 16px; font-weight: 500;
+            color: var(--text); text-decoration: none;
+            transition: background .15s;
+            margin-bottom: 4px;
+        }
+        .mobile-menu a:hover, .mobile-menu a.active {
+            background: var(--accent-light); color: var(--primary-dark);
+        }
+        .mobile-menu a.active { font-weight: 700; }
+        .mobile-menu .m-divider { height: 1px; background: var(--border); margin: 16px 0; }
+        .mobile-menu .m-user-info {
+            padding: 16px;
+            background: var(--bg);
+            border-radius: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .mobile-menu .m-avatar {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: var(--primary); color: white;
+            display: grid; place-items: center;
+            font-size: 16px; font-weight: 700;
+            flex-shrink: 0;
+        }
+        .mobile-menu .m-user-name { font-size: 14px; font-weight: 700; color: var(--text); }
+        .mobile-menu .m-user-role { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .mobile-menu .m-login-btn {
+            display: block; text-align: center;
+            background: var(--primary); color: white;
+            padding: 14px; border-radius: 12px;
+            font-size: 15px; font-weight: 600;
+            margin-top: 8px;
+        }
+        .mobile-menu .m-login-btn:hover { background: var(--primary-dark); color: white; }
+        .mobile-menu .m-danger { color: #b91c1c; }
+        .mobile-menu .m-danger:hover { background: #fef2f2; color: #b91c1c; }
+        .menu-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,.4);
+            opacity: 0; pointer-events: none;
+            transition: opacity .3s;
+            z-index: 102;
+        }
+        .menu-overlay.show { opacity: 1; pointer-events: auto; }
+
+        /* iPhone 13 Pro / 14 Pro (390px) and below */
+        @media (max-width: 768px) {
+            nav { padding: 0 20px; height: 60px; }
             .nav-links { display: none; }
-            .hero { padding: 40px 20px 36px; }
-            .filters-section { padding: 18px 20px; }
-            .menu-section { padding: 32px 20px 48px; }
-            .menu-grid { grid-template-columns: 1fr; }
-            footer { padding: 40px 20px 20px; }
-            .footer-grid { grid-template-columns: 1fr; }
+            .user-menu { display: none; }
+            nav > a.btn-owner { display: none; }
+            .burger { display: block; }
+
+            .nav-logo svg { width: 120px; height: 30px; }
+
+            .hero { padding: 40px 20px 32px; }
+            .hero h1 { font-size: 32px; }
+            .hero-desc { font-size: 14px; }
+
+            .filters-section { padding: 16px 20px; }
+            .filter-chip { font-size: 12px; padding: 6px 14px; }
+
+            .menu-section { padding: 28px 20px 48px; }
+            .menu-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+
+            .menu-card { padding: 0; }
+            .menu-card-img { height: 140px; }
+            .menu-card-body { padding: 12px; }
+            .menu-card-name { font-size: 14px; }
+            .price-badge { font-size: 12px; padding: 4px 8px; }
+
+            footer { padding: 36px 20px 20px; }
+            .footer-grid { grid-template-columns: 1fr; gap: 28px; }
+        }
+
+        /* iPhone XS / X (375px) */
+        @media (max-width: 400px) {
+            nav { padding: 0 16px; }
+            .hero { padding: 32px 16px 28px; }
+            .hero h1 { font-size: 28px; }
+            .filters-section { padding: 14px 16px; }
+            .menu-section { padding: 24px 16px 40px; }
+            .menu-card-img { height: 120px; }
+            .menu-card-name { font-size: 13px; }
+        }
+
+        /* iPhone SE (320px) */
+        @media (max-width: 360px) {
+            .hero h1 { font-size: 24px; }
+            .menu-grid { grid-template-columns: 1fr; gap: 14px; }
+            .menu-card-img { height: 180px; }
         }
 
         @keyframes fadeUp {
@@ -428,7 +547,66 @@
         {{else}}
             <a href="/login" class="btn-owner">Login</a>
         {{/if}}
+
+        <!-- Mobile burger button -->
+        <button class="burger" id="burger" aria-label="Menyu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
     </nav>
+
+    <!-- Mobile slide-out menu -->
+    <div class="menu-overlay" id="menuOverlay"></div>
+    <aside class="mobile-menu" id="mobileMenu">
+        {{#if user}}
+            <div class="m-user-info">
+                <div class="m-avatar">{{user.initial}}</div>
+                <div>
+                    <div class="m-user-name">{{user.name}}</div>
+                    <div class="m-user-role">
+                        {{#if user.isAdmin}}
+                            <span class="badge-admin">ADMIN</span>
+                        {{else}}
+                            Foydalanuvchi
+                        {{/if}}
+                    </div>
+                </div>
+            </div>
+        {{/if}}
+
+        <a href="/">
+            <i data-lucide="home" width="18" height="18"></i>
+            Home
+        </a>
+        <a href="/menu" class="active">
+            <i data-lucide="utensils-crossed" width="18" height="18"></i>
+            Menu
+        </a>
+        <a href="/feedback">
+            <i data-lucide="message-circle" width="18" height="18"></i>
+            Feedback
+        </a>
+
+        {{#if user.isAdmin}}
+            <div class="m-divider"></div>
+            <a href="/admin">
+                <i data-lucide="layout-dashboard" width="18" height="18"></i>
+                Admin Panel
+            </a>
+        {{/if}}
+
+        {{#if user}}
+            <div class="m-divider"></div>
+            <a href="/logout" class="m-danger">
+                <i data-lucide="log-out" width="18" height="18"></i>
+                Chiqish
+            </a>
+        {{else}}
+            <div class="m-divider"></div>
+            <a href="/login" class="m-login-btn">Login</a>
+        {{/if}}
+    </aside>
 
     <!-- ========== HERO ========== -->
     <section class="hero">
@@ -575,6 +753,29 @@
     <script>
         // ─── 1. LUCIDE ICONS ──────────────────────────────────
         lucide.createIcons();
+
+        // ===== Mobile burger menu =====
+        (function() {
+            var burger = document.getElementById('burger');
+            var menu = document.getElementById('mobileMenu');
+            var overlay = document.getElementById('menuOverlay');
+            if (!burger || !menu || !overlay) return;
+
+            function toggleMenu() {
+                burger.classList.toggle('open');
+                menu.classList.toggle('open');
+                overlay.classList.toggle('show');
+                document.body.style.overflow = menu.classList.contains('open') ? 'hidden' : '';
+            }
+            function closeMenu() {
+                burger.classList.remove('open');
+                menu.classList.remove('open');
+                overlay.classList.remove('show');
+                document.body.style.overflow = '';
+            }
+            burger.addEventListener('click', toggleMenu);
+            overlay.addEventListener('click', closeMenu);
+        })();
 
         // ─── 2. CHIP ACTIVE (URL dan) ─────────────────────────
         (function () {
